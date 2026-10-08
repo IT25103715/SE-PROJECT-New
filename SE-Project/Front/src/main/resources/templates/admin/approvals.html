@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Approval Queue')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Approval Queue</h2>
+        <span class="text-muted small" th:text="${items.size()} + ' pending'">0 pending</span>
+    </div>
+    <p class="text-muted">Promotions, movies, showtimes, halls, food items, food combos and parking options submitted by a Promotion Manager or Manager wait here until you approve or reject them - customers can't see or use them until then.</p>
+
+    <table class="table table-striped bg-white align-middle">
+        <thead>
+        <tr>
+            <th>Type</th>
+            <th>Name / Title</th>
+            <th>Created By</th>
+            <th>Date Submitted</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item : ${items}">
+            <td><span class="badge bg-secondary" th:text="${item.typeLabel}">Type</span></td>
+            <td th:text="${item.name}">Name</td>
+            <td th:text="${item.createdByName}">Created by</td>
+            <td th:text="${#temporals.format(item.submittedAt, 'dd MMM yyyy, HH:mm')}">Date</td>
+            <td>
+                <div class="d-flex flex-wrap gap-1 align-items-center">
+                    <form method="post"
+                          th:action="@{/admin/approvals/{type}/{id}/approve(type=${item.typeSlug},id=${item.id})}"
+                          class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-success">Approve</button>
+                    </form>
+                    <form method="post"
+                          th:action="@{/admin/approvals/{type}/{id}/reject(type=${item.typeSlug},id=${item.id})}"
+                          class="d-inline-flex gap-1 align-items-center">
+                        <input type="text" name="reason" class="form-control form-control-sm" style="width: 160px;"
+                               placeholder="Reason (optional)">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        <tr th:if="${items.isEmpty()}">
+            <td colspan="5" class="text-center text-muted">Nothing pending approval right now.</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
