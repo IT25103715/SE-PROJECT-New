@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My Bookings')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <h2 class="mb-4">My Bookings</h2>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}">Error</div>
+
+    <table class="table table-striped bg-white">
+        <thead><tr><th>Movie</th><th>Showtime</th><th>Seats</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+        <tr th:each="booking : ${bookings}">
+            <td th:text="${booking.showtime.movie.title}">Movie</td>
+            <td th:text="${#temporals.format(booking.showtime.dateTime, 'dd MMM yyyy, HH:mm')}">Date</td>
+            <td>
+                <span th:each="bs, iter : ${booking.bookingSeats}">
+                    <span th:text="${bs.seat.seatCode}">A1</span><span th:if="${!iter.last}">, </span>
+                </span>
+            </td>
+            <td>
+                <span th:text="'Rs. ' + ${booking.totalPrice}">Total</span>
+                <div class="small text-muted" th:if="${booking.hasAddOns()}">
+                    <span th:if="${booking.foodTotal != null and booking.foodTotal.signum() > 0}">incl. food</span><span th:if="${booking.foodTotal != null and booking.foodTotal.signum() > 0 and booking.parkingSelected}"> + </span><span th:if="${booking.parkingSelected}">parking</span>
+                </div>
+            </td>
+            <td>
+                <span class="badge"
+                      th:classappend="${booking.status.name() == 'CONFIRMED'} ? 'bg-success' : (${booking.status.name() == 'CANCELLED' or booking.status.name() == 'EXPIRED'} ? 'bg-secondary' : 'bg-warning')"
+                      th:text="${booking.status.name() == 'PENDING' and paymentsByBookingId.get(booking.id)?.status?.name() == 'AWAITING_RECEIPT'} ? 'Awaiting Review' : ${booking.status}">Status</span>
+                <!-- Payment timeout: unpaid bookings are released at their deadline (10 min seat hold for every
+                     method, 24 h for a Bank Transfer with no receipt). -->
+                <div class="small text-muted" th:if="${booking.status.name() == 'EXPIRED'}">Not paid in time - seats released</div>
+            </td>
+            <td class="d-flex gap-1">
+                <a class="btn btn-sm btn-outline-primary" th:href="@{/bookings/{id}(id=${booking.id})}">View Ticket</a>
+                <a th:if="${booking.status.name() == 'CONFIRMED'}"
+                   class="btn btn-sm btn-outline-primary" th:href="@{/bookings/{id}/download-ticket(id=${booking.id})}">Download</a>
+                <a th:if="${booking.status.name() == 'PENDING' and paymentsByBookingId.get(booking.id)?.status?.name() == 'AWAITING_RECEIPT'}"
+                   class="btn btn-sm btn-outline-warning" th:href="@{/bookings/{id}/upload-receipt(id=${booking.id})}">Upload Receipt</a>
+                <a th:if="${booking.status.name() == 'CONFIRMED' and booking.showtime.dateTime.isAfter(T(java.time.LocalDateTime).now())}"
+                   class="btn btn-sm btn-outline-secondary" th:href="@{/bookings/{id}/edit(id=${booking.id})}">Edit Seats</a>
+                <form th:if="${booking.status.name() == 'CONFIRMED'}" th:action="@{/bookings/{id}/cancel(id=${booking.id})}" method="post"
+                      onsubmit="return confirm('Cancel this booking?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                </form>
+            </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(bookings)}"><td colspan="6" class="text-muted">You have no bookings yet.</td></tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Select Seats')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <!-- Movie header + showtime picker. Picking another time slot just loads that showtime's
+         seat map (same GET /bookings/new?showtimeId=X) and jumps to #seatSelection below. -->
+    <div class="ch-booking-movie">
+        <img th:if="${showtime.movie.posterUrl}" th:src="${showtime.movie.posterUrl}" class="ch-booking-poster"
+             th:alt="${showtime.movie.title} + ' poster'">
+        <div class="ch-booking-movie-info">
+            <h2 class="mb-1" th:text="${showtime.movie.title}">Movie</h2>
+            <p class="text-muted mb-2">
+                <span th:text="${showtime.movie.genre}">Genre</span> &middot;
+                <span th:text="${showtime.movie.durationMinutes} + ' min'">120 min</span>
+                <span class="badge ch-lang-badge ms-1" th:text="${showtime.movie.language}">ENGLISH</span>
+            </p>
+            <p class="ch-booking-desc mb-0" th:text="${showtime.movie.description}">Description</p>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/showtime-picker :: picker(${showtimesByDate}, ${showtime.id})}"></div>
+
+    <div id="seatSelection" class="ch-seat-heading">
+        <h4 class="mb-1">Select Seats</h4>
+        <p class="text-muted mb-0">
+            <span th:text="${showtime.cinemaHall.name}">Hall</span> &mdash;
+            <span th:text="${#temporals.format(showtime.dateTime, 'EEE, dd MMM yyyy, h:mm a')}">Date</span> &mdash;
+            Rs. <span th:text="${showtime.price}">0.00</span> / seat
+        </p>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}">Error</div>
+
+    <form th:action="@{/bookings}" method="post" id="bookingForm">
+        <input type="hidden" name="showtimeId" th:value="${showtime.id}">
+        <!-- Mirrors the selected <option>'s data-option-type - lets the backend tell "picked a
+             Bank Transfer option" apart from "picked the raw Cash enum value" even though both
+             submit paymentMethod=CASH underneath (see SelectablePaymentMethod's javadoc). -->
+        <input type="hidden" name="paymentOptionType" id="paymentOptionTypeInput" value="">
+        <!-- Selected option's name (e.g. "Google Pay") - only used to re-select the same option
+             if the security check is failed, since several wallets share the same value/type. -->
+        <input type="hidden" name="paymentOptionLabel" id="paymentOptionLabelInput" value="">
+
+        <!-- Step 1: seat selection, payment method, coupon -->
+        <div id="step1">
+            <!-- Wrapped in its own container so this exact grid (not a copy) can be relocated
+                 into the step-2 seat-edit panel below and back again - a single source of truth
+                 for what's selected, so nothing can drift out of sync between the two steps. -->
+            <div id="seatMapContainer">
+                <!-- Theater layout: curved screen, lettered rows, numbered seat blocks. Each row's
+                     seats sit in their own .seat-row-seats wrapper so the only siblings of a seat are
+                     other seats in that row (the "+" button's next-seat logic relies on this); the
+                     centre aisle is just a margin (.aisle-before), not an extra element. Scripts read
+                     a seat's code from data-seat-code, since the block itself only shows the number. -->
+                <div class="ch-screen" aria-hidden="true"><span>SCREEN</span></div>
+                <div class="seat-map mb-3">
+                    <div class="seat-row" th:each="rowEntry : ${seatsByRow}"
+                         th:with="rowSize=${rowEntry.value.size()}">
+                        <span class="seat-row-label" th:text="${rowEntry.key}">A</span>
+                        <div class="seat-row-seats">
+                            <div th:each="seat, iter : ${rowEntry.value}"
+                                 class="seat"
+                                 th:classappend="${(bookedSeatIds.contains(seat.id) ? 'booked' : '')
+                                         + (rowSize >= 6 and rowSize % 2 == 0 and iter.index == rowSize / 2 ? ' aisle-before' : '')}"
+                                 th:text="${seat.seatNumber}"
+                                 th:attr="data-seat-id=${seat.id},data-seat-code=${seat.seatCode},title=${seat.seatCode}"
+                                 onclick="toggleSeat(this)">1</div>
+                        </div>
+                        <span class="seat-row-label" th:text="${rowEntry.key}">A</span>
+                    </div>
+                </div>
+
+                <div class="seat-legend">
+                    <span><span class="seat-swatch"></span> Available</span>
+                    <span><span class="seat-swatch selected"></span> Selected</span>
+                    <span><span class="seat-swatch booked"></span> Booked</span>
+                </div>
+            </div>
+
+            <p>Selected seats: <strong id="selectedList">none</strong></p>
+            <p>Total: Rs. <strong id="totalPrice">0.00</strong></p>
+
+            <div class="mb-3" style="max-width: 280px;">
+                <label class="form-label">Payment method</label>
+                <select name="paymentMethod" class="form-select" id="paymentMethodSelect">
+                    <option th:each="opt : ${paymentMethodOptions}" th:value="${opt.value}"
+                            th:attr="data-option-type=${opt.optionType}" th:text="${opt.label}"></option>
+                </select>
+                <div class="form-text">Simulated payment only - no real card/gateway is contacted.</div>
+            </div>
+
+            <div class="mb-3" style="max-width: 280px;">
+                <label class="form-label">Coupon code (optional)</label>
+                <input type="text" name="promoCode" class="form-control" placeholder="e.g. WELCOME10">
+            </div>
+
+            <!-- Customer name (cosmetic-only - submitted, but only so it can be refilled if the
+                 security check on step 2 is failed; nothing stores it) -->
+            <div class="mb-3" style="max-width: 280px;">
+                <label class="form-label" for="customerName">Customer Name</label>
+                <input type="text" class="form-control" id="customerName" name="customerName" placeholder="Enter your name" autocomplete="off">
+                <div class="invalid-feedback">Please enter your name.</div>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="nextBtn" disabled>Next</button>
+        </div>
+
+        <!-- Step 2: review summary before the real submit. The seat count/list here is
+             editable in place - the pencil icon and +/- stepper open the panel on the
+             right, which is the very same seat-map grid from step 1 (physically moved
+             there by JS, not a copy), trimmed to nothing but seat code + Available/
+             Booked/Selected. -->
+        <div id="step2" class="d-none">
+            <div class="row g-4">
+                <div class="col-lg-5">
+                    <div class="card ch-order-summary mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title" th:text="${showtime.movie.title}">Movie</h5>
+
+                            <p class="mb-1 d-flex align-items-center gap-1">
+                                <span>Seats</span>
+                                <button type="button" class="ch-edit-icon-btn" title="Edit seats" onclick="toggleSeatEditPanel()">&#9998;</button>
+                            </p>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <button type="button" class="btn btn-sm btn-outline-secondary seat-stepper-btn" id="seatMinusBtn"
+                                        title="Remove the last seat you picked" aria-label="Remove a seat" onclick="removeLastSeat()">&minus;</button>
+                                <strong id="seatCountDisplay">0</strong>
+                                <button type="button" class="btn btn-sm btn-outline-secondary seat-stepper-btn" id="seatPlusBtn"
+                                        title="Add the next seat in this row" aria-label="Add the next seat in this row" onclick="addSeatToRight()">+</button>
+                            </div>
+                            <p class="mb-1 small text-warning d-none" id="seatStepperMsg" role="status"></p>
+                            <p class="mb-1 small text-muted" id="summarySeats"></p>
+
+                            <p class="mb-1">Customer: <strong id="summaryCustomerName"></strong></p>
+                            <div class="small text-muted" id="summaryAddOns"></div>
+                            <p class="mb-0">Total: Rs. <strong id="summaryTotal"></strong>
+                                <span class="small text-muted">(before any coupon)</span></p>
+                        </div>
+                    </div>
+                    <!-- Optional add-ons: food (quantity steppers) and car parking. Only APPROVED +
+                         available items are listed; parking only while this showtime still has free
+                         slots. Selections are sent as hidden "food" (id:qty) and "parking" fields. -->
+                    <div class="card ch-order-summary mb-3" id="addOnsCard"
+                         th:if="${!#lists.isEmpty(foodItems) or !#lists.isEmpty(foodCombos) or parkingOption != null}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                <div>
+                                    <h6 class="card-title mb-0">&#127871; Snacks &amp; extras</h6>
+                                    <div class="small text-muted">Optional - skip this if you don't want anything.</div>
+                                </div>
+                                <span class="ch-addons-total d-none" id="addOnsTotalPill" aria-live="polite">+ Rs. 0.00</span>
+                            </div>
+
+                            <!-- Filter chips (client-side only): narrow the tiles to one kind of item. -->
+                            <div class="ch-addon-chips" role="group" aria-label="Filter snacks"
+                                 th:if="${#lists.size(foodItems) + #lists.size(foodCombos) > 3}">
+                                <button type="button" class="ch-addon-chip active" data-filter="all">All</button>
+                                <button type="button" class="ch-addon-chip" data-filter="combo"
+                                        th:if="${!#lists.isEmpty(foodCombos) or #lists.contains(foodItems.![category.name()], 'COMBO_SNACK')}">Combos</button>
+                                <button type="button" class="ch-addon-chip" data-filter="snack"
+                                        th:if="${#lists.contains(foodItems.![category.name()], 'SNACK')}">Snacks</button>
+                                <button type="button" class="ch-addon-chip" data-filter="drink"
+                                        th:if="${#lists.contains(foodItems.![category.name()], 'DRINK')}">Drinks</button>
+                            </div>
+
+                            <div class="ch-addon-grid">
+                                <!-- Food combo packs: charged their bundle price (not the sum of the items),
+                                     sent as hidden "foodCombo" (id:qty) fields. Photo = the first item's photo. -->
+                                <div th:each="combo : ${foodCombos}" class="ch-addon-tile ch-combo-row" data-cat="combo"
+                                     th:with="photo=${#lists.isEmpty(combo.items) ? null : combo.items[0].foodItem.imageUrl}"
+                                     th:attr="data-combo-id=${combo.id},data-price=${combo.bundlePrice}">
+                                    <div class="ch-addon-photo">
+                                        <img th:if="${photo != null}" th:src="@{${photo}}" alt="" loading="lazy">
+                                        <span th:unless="${photo != null}" aria-hidden="true">&#127871;</span>
+                                        <span class="ch-addon-badge">Combo</span>
+                                    </div>
+                                    <div class="ch-addon-body">
+                                        <div class="ch-addon-info">
+                                            <div class="ch-addon-name" th:text="${combo.name}">Movie Night Combo</div>
+                                            <div class="ch-addon-sub" th:text="${combo.includedSummary}">1 x Large Popcorn + 2 x Soft Drink</div>
+                                            <span class="ch-addon-price">
+                                                <span th:text="'Rs. ' + ${combo.bundlePrice}">Rs. 1000.00</span>
+                                                <s class="ch-addon-was" th:if="${combo.savings.signum() > 0}" th:text="'Rs. ' + ${combo.individualTotal}">Rs. 1250.00</s>
+                                                <span class="ch-addon-save" th:if="${combo.savings.signum() > 0}"
+                                                      th:text="'Save Rs. ' + ${combo.savings}">Save Rs. 250.00</span>
+                                            </span>
+                                        </div>
+                                        <div class="ch-addon-action">
+                                            <button type="button" class="ch-addon-add" th:attr="aria-label='Add ' + ${combo.name}">+ Add</button>
+                                            <div class="ch-addon-stepper">
+                                                <button type="button" class="combo-minus" th:attr="aria-label='Remove one ' + ${combo.name}">&minus;</button>
+                                                <strong class="combo-qty" aria-live="polite">0</strong>
+                                                <button type="button" class="combo-plus" th:attr="aria-label='Add one ' + ${combo.name}">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div th:each="item : ${foodItems}" class="ch-addon-tile ch-food-row"
+                                     th:attr="data-food-id=${item.id},data-price=${item.price},data-cat=${item.category.name() == 'DRINK' ? 'drink' : (item.category.name() == 'COMBO_SNACK' ? 'combo' : 'snack')}">
+                                    <div class="ch-addon-photo">
+                                        <img th:if="${item.imageUrl != null}" th:src="@{${item.imageUrl}}" alt="" loading="lazy">
+                                        <span th:unless="${item.imageUrl != null}" aria-hidden="true"
+                                              th:text="${item.category.name() == 'DRINK'} ? '&#129380;' : '&#127871;'">&#127871;</span>
+                                    </div>
+                                    <div class="ch-addon-body">
+                                        <div class="ch-addon-info">
+                                            <div class="ch-addon-name" th:text="${item.name}">Large Popcorn</div>
+                                            <div class="ch-addon-sub" th:text="${item.category.displayLabel}">Snack</div>
+                                            <span class="ch-addon-price" th:text="'Rs. ' + ${item.price}">Rs. 650.00</span>
+                                        </div>
+                                        <div class="ch-addon-action">
+                                            <button type="button" class="ch-addon-add" th:attr="aria-label='Add ' + ${item.name}">+ Add</button>
+                                            <div class="ch-addon-stepper">
+                                                <button type="button" class="food-minus" th:attr="aria-label='Remove one ' + ${item.name}">&minus;</button>
+                                                <strong class="food-qty" aria-live="polite">0</strong>
+                                                <button type="button" class="food-plus" th:attr="aria-label='Add one ' + ${item.name}">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Car parking: one per booking, only while this showtime still has free slots. -->
+                            <label class="ch-parking-card" for="parkingCheckbox" th:if="${parkingOption != null and parkingSlotsLeft > 0}">
+                                <span class="ch-parking-icon" aria-hidden="true">&#128663;</span>
+                                <span class="flex-grow-1">
+                                    <span class="d-block fw-semibold">Reserve a parking slot</span>
+                                    <span class="small text-muted">
+                                        Rs. <span th:text="${parkingOption.price}">300.00</span>
+                                        <span th:text="'&middot; ' + ${parkingSlotsLeft} + ' slot(s) left'">&middot; 12 slots left</span>
+                                    </span>
+                                </span>
+                                <span class="form-check form-switch m-0">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="parkingCheckbox"
+                                           th:attr="data-price=${parkingOption.price}">
+                                </span>
+                            </label>
+                            <div class="ch-parking-card is-full" th:if="${parkingOption != null and parkingSlotsLeft <= 0}">
+                                <span class="ch-parking-icon" aria-hidden="true">&#128663;</span>
+                                <span class="small text-muted">Parking is full for this showtime.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- "I'm not a robot" check for wallet / bank-transfer payments, which are submitted
+                         straight from here. Hidden and disabled for card payments - those get their
+                         own fresh check on the card-details screen. BookingController#create checks
+                         it before any payment runs (see fragments/human-check.html). -->
+                    <div th:replace="~{fragments/human-check :: widget}"></div>
+                    <!-- Consent for wallet / bank transfer (card payments tick it on the card-details
+                         screen instead) - shown/hidden together with the robot check above. -->
+                    <div th:replace="~{fragments/terms :: consent}"></div>
+                    <!-- Payment timeout (every payment method): on reaching this step the seats are
+                         held for 10 minutes (POST /bookings/hold). The countdown runs from the server's
+                         deadline; at zero the Pay buttons are disabled - and the server re-checks the
+                         deadline itself when the payment is submitted (BookingService#completeHeldBooking). -->
+                    <input type="hidden" name="holdId" id="holdIdInput" value="">
+                    <div id="holdTimerBox" class="alert alert-info py-2 d-none" role="status">
+                        Time remaining to complete payment: <strong id="holdTimerText">10:00</strong>
+                        <div class="small">Your seats are reserved for you until <strong id="holdTimerUntil">--:--</strong> - pay before then.</div>
+                    </div>
+                    <div id="holdExpiredBox" class="alert alert-danger d-none" role="alert">
+                        Your reserved seats have been released. Please start a new booking.
+                        <a class="alert-link" th:href="@{/bookings/new(showtimeId=${showtime.id})}">Start a new booking</a>
+                    </div>
+                    <div id="holdErrorBox" class="alert alert-warning small d-none" role="alert"></div>
+                    <button type="button" class="btn btn-outline-secondary me-2" id="backBtn">Back</button>
+                    <button type="submit" class="btn btn-primary" id="confirmBtn">Proceed to Pay</button>
+                    <!-- Real PayPal Sandbox checkout (only when "PayPal" is picked and Sandbox keys are
+                         configured). Replaces "Proceed to Pay" for PayPal: the button opens PayPal's own
+                         Sandbox checkout, and the booking/ticket is only created after
+                         /payments/paypal/capture-order confirms the capture - see PayPalCheckoutController. -->
+                    <div id="paypalBlock" class="d-none mt-3" style="max-width: 360px;">
+                        <p class="small text-muted mb-2">
+                            PayPal Sandbox (test money only). Charged in
+                            <span th:text="${paypalCurrency}">USD</span> at
+                            Rs. <span th:text="${paypalLkrPerUsd}">300</span> = 1 <span th:text="${paypalCurrency}">USD</span>.
+                            Type the security code and tick the Terms box to enable the button.
+                        </p>
+                        <div id="paypalButtonContainer"></div>
+                        <div class="alert alert-danger small mt-2 mb-0 d-none" id="paypalError" role="alert"></div>
+                        <div class="small text-muted mt-2 d-none" id="paypalBusy" role="status">
+                            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                            Confirming your payment with PayPal - please don't close this page...
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div id="seatEditPanel" class="d-none"></div>
+                </div>
+            </div>
+        </div>
+    </form>
+</main>
+
+<div th:replace="~{fragments/terms :: modal}"></div>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script th:inline="javascript">
+    // Cart functionality is scoped to single-showtime seat selection, not a
+    // persistent multi-item cart, per team decision - see Design Document
+    // System Limitations. "Add" = select a seat, "remove" = deselect it,
+    // "view" = the live selected-seats list and running total below, and
+    // "update" = re-selecting before hitting Confirm & Pay - all satisfied
+    // without needing to persist a cart across sessions or showtimes.
+    const pricePerSeat = /*[[${showtime.price}]]*/ 0;
+    const selectedSeats = new Set();
+
+    // ---------- Optional add-ons (food & parking) ----------
+    // Quantities live in foodQuantities; the server re-prices everything from the menu, so these
+    // numbers only drive the on-screen total and the hidden "food"/"parking" form fields.
+    const foodQuantities = {};
+    const comboQuantities = {};   // food combo packs, by FoodCombo id
+    const parkingCheckbox = document.getElementById('parkingCheckbox');
+    const MAX_FOOD_QTY = 20;
+
+    function addOnsTotals() {
+        let food = 0;
+        document.querySelectorAll('.ch-food-row').forEach(row => {
+            food += (foodQuantities[row.dataset.foodId] || 0) * parseFloat(row.dataset.price);
+        });
+        // Combos count at their bundle price.
+        document.querySelectorAll('.ch-combo-row').forEach(row => {
+            food += (comboQuantities[row.dataset.comboId] || 0) * parseFloat(row.dataset.price);
+        });
+        const parking = parkingCheckbox && parkingCheckbox.checked ? parseFloat(parkingCheckbox.dataset.price) : 0;
+        return {food, parking};
+    }
+
+    function syncAddOnInputs() {
+        const form = document.getElementById('bookingForm');
+        form.querySelectorAll('input[name="food"], input[name="foodCombo"], input[name="parking"]').forEach(i => i.remove());
+        Object.entries(comboQuantities).forEach(([id, qty]) => {
+            if (qty > 0) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'foodCombo';
+                input.value = id + ':' + qty;
+                form.appendChild(input);
+            }
+        });
+        Object.entries(foodQuantities).forEach(([id, qty]) => {
+            if (qty > 0) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'food';
+                input.value = id + ':' + qty;
+                form.appendChild(input);
+            }
+        });
+        if (parkingCheckbox && parkingCheckbox.checked) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'parking';
+            input.value = 'true';
+            form.appendChild(input);
+        }
+    }
+
+    /** Seats + food + parking, shown before any coupon (the server applies the coupon). */
+    function updateGrandTotal() {
+        const seats = pricePerSeat * selectedSeats.size;
+        const {food, parking} = addOnsTotals();
+        const totalEl = document.getElementById('summaryTotal');
+        if (totalEl) totalEl.textContent = (seats + food + parking).toFixed(2);
+        const breakdown = document.getElementById('summaryAddOns');
+        if (breakdown) {
+            const parts = [];
+            if (food > 0 || parking > 0) parts.push('Seats Rs. ' + seats.toFixed(2));
+            if (food > 0) parts.push('Food Rs. ' + food.toFixed(2));
+            if (parking > 0) parts.push('Parking Rs. ' + parking.toFixed(2));
+            breakdown.textContent = parts.join(' \u00b7 ');
+        }
+        const pill = document.getElementById('addOnsTotalPill');
+        if (pill) {
+            pill.textContent = '+ Rs. ' + (food + parking).toFixed(2);
+            pill.classList.toggle('d-none', food + parking === 0);
+        }
+        syncAddOnInputs();
+    }
+
+    /** Tile look: "+ Add" button while 0, quantity stepper (and highlighted tile) once added. */
+    function syncAddOnTile(row, value) {
+        row.classList.toggle('is-added', value > 0);
+        const plus = row.querySelector('.food-plus, .combo-plus');
+        if (plus) plus.disabled = value >= MAX_FOOD_QTY;
+    }
+
+    function setFoodQuantity(row, qty) {
+        const value = Math.max(0, Math.min(MAX_FOOD_QTY, qty));
+        foodQuantities[row.dataset.foodId] = value;
+        row.querySelector('.food-qty').textContent = value;
+        syncAddOnTile(row, value);
+        updateGrandTotal();
+    }
+
+    function setComboQuantity(row, qty) {
+        const value = Math.max(0, Math.min(MAX_FOOD_QTY, qty));
+        comboQuantities[row.dataset.comboId] = value;
+        row.querySelector('.combo-qty').textContent = value;
+        syncAddOnTile(row, value);
+        updateGrandTotal();
+    }
+
+    document.querySelectorAll('.ch-combo-row').forEach(row => {
+        row.querySelector('.ch-addon-add').addEventListener('click', () => setComboQuantity(row, 1));
+        row.querySelector('.combo-plus').addEventListener('click', () => setComboQuantity(row, (comboQuantities[row.dataset.comboId] || 0) + 1));
+        row.querySelector('.combo-minus').addEventListener('click', () => setComboQuantity(row, (comboQuantities[row.dataset.comboId] || 0) - 1));
+    });
+
+    document.querySelectorAll('.ch-food-row').forEach(row => {
+        row.querySelector('.ch-addon-add').addEventListener('click', () => setFoodQuantity(row, 1));
+        row.querySelector('.food-plus').addEventListener('click', () => setFoodQuantity(row, (foodQuantities[row.dataset.foodId] || 0) + 1));
+        row.querySelector('.food-minus').addEventListener('click', () => setFoodQuantity(row, (foodQuantities[row.dataset.foodId] || 0) - 1));
+    });
+    if (parkingCheckbox) parkingCheckbox.addEventListener('change', function () {
+        this.closest('.ch-parking-card').classList.toggle('is-added', this.checked);
+        updateGrandTotal();
+    });
+
+    // Filter chips: show only combos / snacks / drinks (purely visual - quantities are kept).
+    document.querySelectorAll('.ch-addon-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('.ch-addon-chip').forEach(c => c.classList.toggle('active', c === chip));
+            const filter = chip.dataset.filter;
+            document.querySelectorAll('.ch-addon-tile').forEach(tile => {
+                tile.classList.toggle('d-none', filter !== 'all' && tile.dataset.cat !== filter);
+            });
+        });
+    });
+
+    // Seat-edit panel (step 2): the grid is relocated here, not copied, so there is
+    // exactly one DOM node representing the seats and their onclick="toggleSeat(this)"
+    // handlers keep working no matter which container currently holds it.
+    const seatMapContainer = document.getElementById('seatMapContainer');
+    const seatMapHome = seatMapContainer.parentElement;
+    const seatMapAnchor = seatMapContainer.nextElementSibling;
+    const seatEditPanel = document.getElementById('seatEditPanel');
+
+    function toggleSeatEditPanel() {
+        seatEditPanel.classList.toggle('d-none');
+    }
+
+    const seatStepperMsg = document.getElementById('seatStepperMsg');
+
+    function showStepperMsg(text) {
+        seatStepperMsg.textContent = text || '';
+        seatStepperMsg.classList.toggle('d-none', !text);
+    }
+
+    // Nearest free seat from `seat` in one direction within its row (booked/selected skipped).
+    function nearestFreeSeat(seat, direction) {
+        let candidate = direction === 'right' ? seat.nextElementSibling : seat.previousElementSibling;
+        while (candidate && (candidate.classList.contains('booked') || candidate.classList.contains('selected'))) {
+            candidate = direction === 'right' ? candidate.nextElementSibling : candidate.previousElementSibling;
+        }
+        return candidate;
+    }
+
+    // "+" : open the seat panel on the right (stays open) AND add the next seat next to the most
+    // recently picked one (a Set keeps insertion order). Seats in a row are rendered left-to-right
+    // by seat number, so it looks right first (later siblings in the same row); once the right side
+    // is full it takes the nearest free seat on the left instead. It never jumps to another row -
+    // that would split the group - so if both sides are full the customer is told the row is full.
+    function addSeatToRight() {
+        seatEditPanel.classList.remove('d-none');
+        if (selectedSeats.size === 0) return;
+        const lastId = [...selectedSeats].pop();
+        const last = document.querySelector('.seat[data-seat-id="' + lastId + '"]');
+        const next = nearestFreeSeat(last, 'right') || nearestFreeSeat(last, 'left');
+        if (!next) {
+            const row = last.dataset.seatCode.replace(/\d+$/, '');
+            showStepperMsg('No free seats left in row ' + row + ' - pick a seat in another row in the seat map.');
+            return;
+        }
+        toggleSeat(next);
+    }
+
+    // "-" : drop the most recently picked seat. At least one seat must stay selected -
+    // the button is disabled at 1 (see updateSummary).
+    function removeLastSeat() {
+        if (selectedSeats.size <= 1) return;
+        const lastId = [...selectedSeats].pop();
+        toggleSeat(document.querySelector('.seat[data-seat-id="' + lastId + '"]'));
+    }
+
+    function toggleSeat(el) {
+        if (el.classList.contains('booked')) return;
+        showStepperMsg('');
+        const seatId = el.getAttribute('data-seat-id');
+        if (selectedSeats.has(seatId)) {
+            selectedSeats.delete(seatId);
+            el.classList.remove('selected');
+        } else {
+            selectedSeats.add(seatId);
+            el.classList.add('selected');
+        }
+        updateSummary();
+    }
+
+    // Seat codes for display, in seat order (A1, A2 ... A10, B1) - not the order they were picked.
+    // Numeric-aware so A10 comes after A9. The "-" button still uses selectedSeats' pick order.
+    function selectedSeatCodes() {
+        return [...selectedSeats]
+            .map(id => document.querySelector('.seat[data-seat-id="' + id + '"]').dataset.seatCode)
+            .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
+    }
+
+    function updateSummary() {
+        const form = document.getElementById('bookingForm');
+        form.querySelectorAll('input[name="seatIds"]').forEach(i => i.remove());
+        selectedSeats.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'seatIds';
+            input.value = id;
+            form.appendChild(input);
+        });
+
+        document.getElementById('selectedList').textContent = selectedSeats.size ? selectedSeatCodes().join(', ') : 'none';
+        document.getElementById('totalPrice').textContent = (pricePerSeat * selectedSeats.size).toFixed(2);
+        document.getElementById('nextBtn').disabled = selectedSeats.size === 0;
+
+        // Step 2's summary only exists once the customer has clicked Next, but keep it
+        // in sync regardless - it's the same click handler whether the grid is currently
+        // showing in step 1 or in step 2's seat-edit panel.
+        const seatCountDisplay = document.getElementById('seatCountDisplay');
+        if (seatCountDisplay) seatCountDisplay.textContent = selectedSeats.size;
+        const summarySeatsEl = document.getElementById('summarySeats');
+        if (summarySeatsEl) summarySeatsEl.textContent = selectedSeats.size ? selectedSeatCodes().join(', ') : 'No seats selected';
+        const summaryTotalEl = document.getElementById('summaryTotal');
+        if (summaryTotalEl) updateGrandTotal();
+        const confirmBtn = document.getElementById('confirmBtn');
+        if (confirmBtn) confirmBtn.disabled = selectedSeats.size === 0 || !holdReady();
+        // Seats changed on the pay step - move the 10-minute hold to the new seats (same deadline).
+        if (step2Visible()) scheduleHoldSeatUpdate();
+        const seatMinusBtn = document.getElementById('seatMinusBtn');
+        if (seatMinusBtn) seatMinusBtn.disabled = selectedSeats.size <= 1;
+    }
+
+    // Card payments get a mock card-details screen first (/bookings/checkout);
+    // Cash/simulated-gateway/bank-transfer skip straight to the existing instant booking flow
+    // (Bank Transfer then gets redirected server-side to the receipt-upload screen instead of
+    // the normal confirmation page - see BookingController#create).
+    const checkoutUrl = /*[[@{/bookings/checkout}]]*/ '/bookings/checkout';
+    const bookUrl = /*[[@{/bookings}]]*/ '/bookings';
+    const paymentMethodSelect = document.getElementById('paymentMethodSelect');
+    const paymentOptionTypeInput = document.getElementById('paymentOptionTypeInput');
+
+    function syncPaymentOptionType() {
+        const selected = paymentMethodSelect.options[paymentMethodSelect.selectedIndex];
+        paymentOptionTypeInput.value = (selected && selected.dataset.optionType) ? selected.dataset.optionType : '';
+        document.getElementById('paymentOptionLabelInput').value = selected ? selected.text : '';
+    }
+    paymentMethodSelect.addEventListener('change', syncPaymentOptionType);
+    syncPaymentOptionType();
+
+    // Robot check + consent only apply here for non-card methods (card gets them on the next screen).
+    const humanCheckBlock = document.getElementById('humanCheckBlock');
+    const humanTokenInput = document.getElementById('humanToken');
+    const termsBlock = document.getElementById('termsBlock');
+    const termsCheckbox = document.getElementById('termsAccepted');
+
+    function syncVerificationBlock() {
+        const isCard = paymentMethodSelect.value === 'CARD';
+        humanCheckBlock.classList.toggle('d-none', isCard);
+        humanTokenInput.disabled = isCard;
+        termsBlock.classList.toggle('d-none', isCard);
+        termsCheckbox.disabled = isCard;
+    }
+    paymentMethodSelect.addEventListener('change', syncVerificationBlock);
+    syncVerificationBlock();
+    termsCheckbox.addEventListener('change', function () { if (this.checked) this.classList.remove('is-invalid'); });
+
+    document.getElementById('bookingForm').addEventListener('submit', function (e) {
+        // PayPal (when the real Sandbox checkout is configured) is paid only via the PayPal button.
+        if (isRealPayPal()) {
+            e.preventDefault();
+            showPayPalError('Please use the PayPal button below to pay.');
+            return;
+        }
+        // Never submit once the reservation has run out (or before it exists).
+        if (needsHold() && !holdReady()) {
+            e.preventDefault();
+            if (!holdExpired) showHoldError('Please wait a moment - your seats are still being reserved.');
+            return;
+        }
+        const method = this.querySelector('select[name="paymentMethod"]').value;
+        if (method !== 'CARD') {
+            // Both checks are independent - flag every one that's missing, not just the first.
+            const humanMissing = !window.humanCheck.passed();
+            const termsMissing = !termsCheckbox.checked;
+            if (humanMissing) window.humanCheck.showError();
+            termsCheckbox.classList.toggle('is-invalid', termsMissing);
+            if (humanMissing || termsMissing) {
+                e.preventDefault();
+                return;
+            }
+        }
+        submittingBooking = true;   // leaving the page to pay - don't release the hold on the way out
+        this.action = method === 'CARD' ? checkoutUrl : bookUrl;
+    });
+
+
+    // ---------- Payment timeout: 10-minute seat hold for every payment method ----------
+    // Pressing Next asks the server to hold the seats (a PENDING booking
+    // with a deadline). The countdown below runs from the seconds the SERVER says are left. At
+    // zero the Pay buttons are disabled; the server also refuses a late payment on its own.
+    const holdUrl = /*[[@{/bookings/hold}]]*/ '/bookings/hold';
+    const holdShowtimeId = /*[[${showtime.id}]]*/ 0;
+    const holdIdInput = document.getElementById('holdIdInput');
+    const holdTimerBox = document.getElementById('holdTimerBox');
+    const holdTimerText = document.getElementById('holdTimerText');
+    const holdTimerUntil = document.getElementById('holdTimerUntil');
+    const holdExpiredBox = document.getElementById('holdExpiredBox');
+    const holdErrorBox = document.getElementById('holdErrorBox');
+    let hold = null;               // {id, deadline} - deadline in this browser's clock
+    let holdPending = false;       // a create/update request is in flight
+    let holdSeatsInSync = true;    // the held seats match the seats on the page
+    let holdSeatsDirty = false;    // seats changed while the hold was still being created
+    let holdExpired = false;
+    let holdTicker = null;
+    let holdSeatTimer = null;
+    let submittingBooking = false;
+
+    function step2Visible() {
+        const el = document.getElementById('step2');
+        return !!el && !el.classList.contains('d-none');
+    }
+
+    // Every payment method gets the 10-minute hold + countdown (the server refuses a booking
+    // without one). Card carries it on to the card-details screen; Bank Transfer turns it into
+    // the 24-hour "upload your slip" deadline.
+    function needsHold() {
+        return paymentMethodSelect.selectedIndex >= 0;
+    }
+
+    /** True when paying is allowed as far as the timeout is concerned. */
+    function holdReady() {
+        return !needsHold() || (hold !== null && !holdPending && holdSeatsInSync && !holdExpired);
+    }
+
+    function showHoldError(message) {
+        holdErrorBox.textContent = message || '';
+        holdErrorBox.classList.toggle('d-none', !message);
+    }
+
+    function syncPayButtons() {
+        const btn = document.getElementById('confirmBtn');
+        if (btn) btn.disabled = selectedSeats.size === 0 || !holdReady();
+        if (typeof updatePayPalButtonState === 'function') updatePayPalButtonState();
+    }
+
+    function csrfParams() {
+        const params = new URLSearchParams();
+        const csrf = document.querySelector('#bookingForm input[name="_csrf"]');
+        if (csrf) params.append('_csrf', csrf.value);
+        return params;
+    }
+
+    function formatRemaining(ms) {
+        const total = Math.max(0, Math.ceil(ms / 1000));
+        const minutes = Math.floor(total / 60);
+        const seconds = total % 60;
+        return String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+    }
+
+    function startCountdown(secondsLeft) {
+        hold.deadline = Date.now() + Math.max(0, Number(secondsLeft) || 0) * 1000;
+        holdTimerBox.classList.remove('d-none');
+        // The clock time the hold ends, in the customer's own time (from the server's seconds left).
+        holdTimerUntil.textContent = new Date(hold.deadline).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+        clearInterval(holdTicker);
+        const tick = function () {
+            if (!hold) return;
+            const left = hold.deadline - Date.now();
+            holdTimerText.textContent = formatRemaining(left);
+            holdTimerBox.classList.toggle('alert-warning', left <= 60000);
+            holdTimerBox.classList.toggle('alert-info', left > 60000);
+            if (left <= 0) onHoldExpired();
+        };
+        tick();
+        holdTicker = setInterval(tick, 1000);
+    }
+
+    /** Timer hit zero (or the server said the hold is gone): stop any payment from this page. */
+    function onHoldExpired() {
+        clearInterval(holdTicker);
+        holdTicker = null;
+        clearTimeout(holdSeatTimer);
+        holdExpired = true;
+        holdTimerText.textContent = '00:00';
+        holdTimerBox.classList.add('d-none');
+        holdExpiredBox.classList.remove('d-none');
+        showHoldError('');
+        if (typeof paypalBlock !== 'undefined') paypalBlock.classList.add('d-none');
+        if (typeof paypalActions !== 'undefined' && paypalActions) paypalActions.disable();
+        syncPayButtons();
+    }
+
+    function adoptHold(id, secondsLeft) {
+        hold = {id: id, deadline: 0};
+        holdIdInput.value = id;
+        holdExpired = false;
+        holdSeatsInSync = true;
+        holdExpiredBox.classList.add('d-none');
+        startCountdown(secondsLeft);
+        syncPayButtons();
+    }
+
+    async function createHold() {
+        if (!needsHold() || hold || holdPending || holdExpired || selectedSeats.size === 0) return;
+        holdPending = true;
+        holdSeatsDirty = false;
+        showHoldError('');
+        syncPayButtons();
+        const params = csrfParams();
+        params.append('showtimeId', holdShowtimeId);
+        selectedSeats.forEach(id => params.append('seatIds', id));
+        try {
+            const {ok, data} = await postForm(holdUrl, params);
+            if (ok && data.holdId) {
+                holdPending = false;
+                adoptHold(data.holdId, data.secondsLeft);
+                if (holdSeatsDirty) scheduleHoldSeatUpdate();
+            } else {
+                showHoldError((data.error || 'Could not reserve your seats.') + ' Press Back to choose other seats.');
+            }
+        } catch (e) {
+            showHoldError('Could not reserve your seats - check your connection, then press Back and Next again.');
+        }
+        holdPending = false;
+        syncPayButtons();
+    }
+
+    function scheduleHoldSeatUpdate() {
+        if (!needsHold() || holdExpired) return;
+        if (!hold) {
+            if (holdPending) holdSeatsDirty = true;
+            return;
+        }
+        holdSeatsInSync = false;
+        syncPayButtons();
+        clearTimeout(holdSeatTimer);
+        holdSeatTimer = setTimeout(pushHoldSeats, 600);
+    }
+
+    async function pushHoldSeats() {
+        if (!hold || holdExpired || selectedSeats.size === 0) return;
+        const sent = [...selectedSeats].sort().join(',');
+        holdPending = true;
+        syncPayButtons();
+        const params = csrfParams();
+        selectedSeats.forEach(id => params.append('seatIds', id));
+        try {
+            const {ok, data} = await postForm(holdUrl + '/' + hold.id + '/seats', params);
+            if (ok) {
+                if (sent === [...selectedSeats].sort().join(',')) {
+                    holdSeatsInSync = true;
+                    showHoldError('');
+                } else {
+                    holdPending = false;
+                    scheduleHoldSeatUpdate();
+                }
+            } else if (data.expired) {
+                holdPending = false;
+                onHoldExpired();
+            } else {
+                showHoldError(data.error || 'That seat was just taken - please pick another one.');
+            }
+        } catch (e) {
+            showHoldError('Could not update your reserved seats - check your connection.');
+        }
+        holdPending = false;
+        syncPayButtons();
+    }
+
+    /** Back / leaving the page: give the seats back now rather than when the timer runs out. */
+    function releaseHold(useBeacon) {
+        clearInterval(holdTicker);
+        holdTicker = null;
+        clearTimeout(holdSeatTimer);
+        holdTimerBox.classList.add('d-none');
+        holdExpiredBox.classList.add('d-none');
+        showHoldError('');
+        holdExpired = false;
+        holdSeatsInSync = true;
+        if (!hold) return;
+        const url = holdUrl + '/' + hold.id + '/release';
+        const params = csrfParams();
+        hold = null;
+        holdIdInput.value = '';
+        if (useBeacon && navigator.sendBeacon) {
+            navigator.sendBeacon(url, params);
+        } else {
+            fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: params,
+                keepalive: true
+            }).catch(() => {});
+        }
+    }
+
+    window.addEventListener('pagehide', function () {
+        if (hold && !submittingBooking) releaseHold(true);
+    });
+    window.addEventListener('pageshow', function (e) {
+        // Coming "Back" to this page from the browser cache: the hold was released on the way out.
+        if (e.persisted && step2Visible()) window.location.reload();
+    });
+
+    // ---------- Real PayPal Sandbox checkout ----------
+    const paypalEnabled = /*[[${paypalEnabled}]]*/ false;
+    const paypalClientId = /*[[${paypalClientId}]]*/ '';
+    const paypalCurrency = /*[[${paypalCurrency}]]*/ 'USD';
+    const paypalCreateUrl = /*[[@{/payments/paypal/create-order}]]*/ '/payments/paypal/create-order';
+    const paypalCaptureUrl = /*[[@{/payments/paypal/capture-order}]]*/ '/payments/paypal/capture-order';
+    const appRoot = (/*[[@{/}]]*/ '/').replace(/\/$/, '');
+    const paypalBlock = document.getElementById('paypalBlock');
+    const paypalError = document.getElementById('paypalError');
+    const paypalBusy = document.getElementById('paypalBusy');
+    const confirmButton = document.getElementById('confirmBtn');
+    let paypalActions = null;
+    let paypalSdkRequested = false;
+    let paypalLastError = null;
+
+    function isRealPayPal() {
+        const selected = paymentMethodSelect.options[paymentMethodSelect.selectedIndex];
+        // Type PAYPAL, or an older generic option simply named "PayPal".
+        return paypalEnabled && !!selected
+            && (selected.dataset.optionType === 'PAYPAL' || selected.text.trim().toLowerCase() === 'paypal');
+    }
+
+    function showPayPalError(message) {
+        paypalError.textContent = message;
+        paypalError.classList.toggle('d-none', !message);
+    }
+
+    function paypalChecksPassed() {
+        return selectedSeats.size > 0 && window.humanCheck.passed() && termsCheckbox.checked && holdReady();
+    }
+
+    function updatePayPalButtonState() {
+        if (!paypalActions) return;
+        if (paypalChecksPassed()) paypalActions.enable(); else paypalActions.disable();
+    }
+
+    function newSecurityCode() {
+        // The server uses up the CAPTCHA code on every create-order call - show a new image.
+        window.humanCheck.refresh();
+        updatePayPalButtonState();
+    }
+
+    async function postForm(url, params) {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'},
+            body: params
+        });
+        const data = await response.json().catch(() => ({}));
+        return {ok: response.ok, data};
+    }
+
+    function renderPayPalButtons() {
+        paypal.Buttons({
+            style: {layout: 'vertical', color: 'gold', shape: 'rect', label: 'paypal'},
+            onInit: function (data, actions) {
+                paypalActions = actions;
+                updatePayPalButtonState();
+            },
+            onClick: function (data, actions) {
+                showPayPalError('');
+                if (!paypalChecksPassed()) {
+                    if (!holdReady() && !holdExpired) showHoldError('Please wait a moment - your seats are still being reserved.');
+                    if (!window.humanCheck.passed()) window.humanCheck.showError();
+                    if (!termsCheckbox.checked) termsCheckbox.classList.add('is-invalid');
+                    return actions.reject();
+                }
+                return actions.resolve();
+            },
+            // 1) Our server checks CAPTCHA + Terms, prices the seats and creates the Sandbox order.
+            createOrder: async function () {
+                paypalLastError = null;
+                const params = new URLSearchParams(new FormData(document.getElementById('bookingForm')));
+                const {ok, data} = await postForm(paypalCreateUrl, params);
+                newSecurityCode();
+                if (!ok || !data.orderId) {
+                    if (data.expired) onHoldExpired();
+                    paypalLastError = data.error || 'Could not start the PayPal payment. Please try again.';
+                    throw new Error(paypalLastError);
+                }
+                return data.orderId;
+            },
+            // 2) Buyer approved on PayPal's own Sandbox window - capture it; the ticket only exists after this succeeds.
+            onApprove: async function (data) {
+                paypalBusy.classList.remove('d-none');
+                showPayPalError('');
+                const params = new URLSearchParams();
+                params.append('orderId', data.orderID);
+                const csrf = document.querySelector('#bookingForm input[name="_csrf"]');
+                if (csrf) params.append('_csrf', csrf.value);
+                try {
+                    const result = await postForm(paypalCaptureUrl, params);
+                    if (result.ok && result.data.redirectUrl) {
+                        submittingBooking = true;
+                        window.location.href = appRoot + result.data.redirectUrl;
+                        return;
+                    }
+                    if (result.data.expired) onHoldExpired();
+                    showPayPalError(result.data.error || 'PayPal did not confirm the payment, so no ticket was issued.');
+                } catch (e) {
+                    showPayPalError('Could not confirm the PayPal payment. No ticket was issued - please check My Bookings before trying again.');
+                }
+                paypalBusy.classList.add('d-none');
+            },
+            onCancel: function () {
+                showPayPalError('PayPal payment cancelled - nothing was charged and no ticket was issued. Type the new security code to try again.');
+            },
+            onError: function () {
+                paypalBusy.classList.add('d-none');
+                showPayPalError(paypalLastError || 'Something went wrong with PayPal. Nothing was charged and no ticket was issued.');
+            }
+        }).render('#paypalButtonContainer');
+    }
+
+    function loadPayPalSdk() {
+        if (paypalSdkRequested) return;
+        paypalSdkRequested = true;
+        const script = document.createElement('script');
+        script.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(paypalClientId)
+            + '&currency=' + encodeURIComponent(paypalCurrency)
+            + '&intent=capture&components=buttons&disable-funding=card,credit,paylater,venmo';
+        script.onload = renderPayPalButtons;
+        script.onerror = function () {
+            paypalSdkRequested = false;
+            showPayPalError('Could not load PayPal. Check your internet connection and reload the page.');
+        };
+        document.head.appendChild(script);
+    }
+
+    function syncPayPalBlock() {
+        const on = isRealPayPal() && !holdExpired;
+        paypalBlock.classList.toggle('d-none', !on);
+        confirmButton.classList.toggle('d-none', on);
+        if (on) loadPayPalSdk();
+        showPayPalError('');
+        updatePayPalButtonState();
+    }
+    paymentMethodSelect.addEventListener('change', syncPayPalBlock);
+    humanTokenInput.addEventListener('input', updatePayPalButtonState);
+    termsCheckbox.addEventListener('change', updatePayPalButtonState);
+    syncPayPalBlock();
+
+    // Step navigation: seat selection + customer name -> review summary.
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const customerNameInput = document.getElementById('customerName');
+
+    document.getElementById('nextBtn').addEventListener('click', function () {
+        const name = customerNameInput.value.trim();
+        if (!name) {
+            customerNameInput.classList.add('is-invalid');
+            return;
+        }
+        customerNameInput.classList.remove('is-invalid');
+
+        // Move the seat grid into step 2's (still-collapsed) edit panel, shrunk down
+        // since this panel is just for adjusting seats, not the main event on this screen.
+        document.querySelector('.seat-map').classList.add('seat-map-compact');
+        seatEditPanel.appendChild(seatMapContainer);
+
+        document.getElementById('seatCountDisplay').textContent = selectedSeats.size;
+        document.getElementById('summarySeats').textContent = selectedSeatCodes().join(', ');
+        document.getElementById('summaryCustomerName').textContent = name;
+        updateGrandTotal();
+
+        step1.classList.add('d-none');
+        step2.classList.remove('d-none');
+
+        // Reserve the seats for 10 minutes and start the countdown (every payment method).
+        if (needsHold()) createHold();
+        syncPayButtons();
+    });
+
+    document.getElementById('backBtn').addEventListener('click', function () {
+        // Move the seat grid back to its spot in step 1, full-size, panel collapsed for next time.
+        document.querySelector('.seat-map').classList.remove('seat-map-compact');
+        seatMapHome.insertBefore(seatMapContainer, seatMapAnchor);
+        seatEditPanel.classList.add('d-none');
+
+        step2.classList.add('d-none');
+        step1.classList.remove('d-none');
+
+        // Leaving the pay step gives the held seats back straight away.
+        releaseHold(false);
+        syncPayPalBlock();
+        syncPayButtons();
+    });
+
+    // Failed robot check or consent (wallet / bank transfer): the server re-rendered this page
+    // with what the customer had submitted - restore it and go straight back to the review
+    // step, where a fresh, unticked robot check is now waiting.
+    const retrySeatIds = /*[[${retrySeatIds}]]*/ null;
+    if (retrySeatIds) {
+        const retryPaymentMethod = /*[[${retryPaymentMethod}]]*/ null;
+        const retryPaymentOptionType = /*[[${retryPaymentOptionType}]]*/ null;
+        const retryPromoCode = /*[[${retryPromoCode}]]*/ null;
+        const retryCustomerName = /*[[${retryCustomerName}]]*/ null;
+        const retryPaymentOptionLabel = /*[[${retryPaymentOptionLabel}]]*/ null;
+
+        // Put back the food & parking the customer had chosen.
+        const retryFood = /*[[${retryFood}]]*/ null;
+        const retryParking = /*[[${retryParking}]]*/ false;
+        (retryFood || []).forEach(value => {
+            const [id, qty] = String(value).split(':');
+            const row = document.querySelector('.ch-food-row[data-food-id="' + id + '"]');
+            if (row) setFoodQuantity(row, parseInt(qty, 10) || 0);
+        });
+        const retryFoodCombos = /*[[${retryFoodCombos}]]*/ null;
+        (retryFoodCombos || []).forEach(value => {
+            const [id, qty] = String(value).split(':');
+            const row = document.querySelector('.ch-combo-row[data-combo-id="' + id + '"]');
+            if (row) setComboQuantity(row, parseInt(qty, 10) || 0);
+        });
+        if (parkingCheckbox && retryParking) {
+            parkingCheckbox.checked = true;
+            parkingCheckbox.closest('.ch-parking-card').classList.add('is-added');
+        }
+        updateGrandTotal();
+        retrySeatIds.forEach(id => {
+            const seat = document.querySelector('.seat[data-seat-id="' + id + '"]');
+            if (seat) toggleSeat(seat);
+        });
+        const sameKind = o => o.value === retryPaymentMethod && (o.dataset.optionType || null) === retryPaymentOptionType;
+        const options = [...paymentMethodSelect.options];
+        const match = options.find(o => sameKind(o) && o.text === retryPaymentOptionLabel) || options.find(sameKind);
+        if (match) match.selected = true;
+        syncPaymentOptionType();
+        syncVerificationBlock();
+        syncPayPalBlock();
+        document.querySelector('input[name="promoCode"]').value = retryPromoCode || '';
+        customerNameInput.value = retryCustomerName || '';
+        const retryHoldId = /*[[${retryHoldId}]]*/ null;
+        const retryHoldSecondsLeft = /*[[${retryHoldSecondsLeft}]]*/ 0;
+        if (retryHoldId && needsHold()) adoptHold(retryHoldId, retryHoldSecondsLeft);
+        if (selectedSeats.size > 0 && customerNameInput.value.trim()) {
+            document.getElementById('nextBtn').click();
+            window.humanCheck.focus();
+        }
+    }
+</script>
+</body>
+</html>

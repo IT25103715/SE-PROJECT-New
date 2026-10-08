@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Booking Confirmation')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="card-title" th:text="${booking.showtime.movie.title}">Movie</h3>
+                    <p class="text-muted" th:text="${#temporals.format(booking.showtime.dateTime, 'dd MMM yyyy, HH:mm')} + ' &middot; ' + ${booking.showtime.cinemaHall.name}">Details</p>
+
+                    <p>
+                        Seats:
+                        <strong th:each="bs, iter : ${booking.bookingSeats}">
+                            <span th:text="${bs.seat.seatCode}">A1</span><span th:if="${!iter.last}">, </span>
+                        </strong>
+                    </p>
+                    <!-- Optional add-ons chosen at checkout -->
+                    <div th:if="${!#lists.isEmpty(foodLines) or booking.parkingSelected}" class="small mb-2">
+                        <div th:each="line : ${foodLines}">
+                            <span class="badge bg-danger me-1" th:if="${line.combo}">Combo</span><span th:text="${line.quantity} + ' x ' + ${line.itemName}">2 x Large Popcorn</span>
+                            &middot; Rs. <span th:text="${line.lineTotal}">1300.00</span>
+                        </div>
+                        <div th:if="${booking.parkingSelected}">
+                            &#128663; <span th:text="${booking.parkingLabel} ?: 'Car parking'">Standard Parking</span>
+                            &middot; Rs. <span th:text="${booking.parkingFee}">300.00</span>
+                        </div>
+                    </div>
+                    <p th:if="${booking.promoCode != null}" class="text-success small mb-1">
+                        Coupon <strong th:text="${booking.promoCode}">CODE</strong> applied: &minus; Rs. <span th:text="${booking.discountAmount}">0.00</span>
+                    </p>
+                    <p th:if="${promoWarning != null}" class="text-danger small mb-1">
+                        Coupon not applied (<span th:text="${promoWarning}">reason</span>) - charged at full price.
+                    </p>
+                    <p>Total paid: <strong th:text="'Rs. ' + ${booking.totalPrice}">0.00</strong></p>
+                    <p>Status:
+                        <span class="badge bg-success" th:if="${booking.status.name() == 'CONFIRMED'}">CONFIRMED</span>
+                        <span class="badge bg-secondary" th:if="${booking.status.name() == 'CANCELLED'}">CANCELLED</span>
+                        <span class="badge bg-warning text-dark" th:if="${booking.status.name() == 'PENDING'}">PENDING</span>
+                        <span class="badge bg-secondary" th:if="${booking.status.name() == 'EXPIRED'}">EXPIRED</span>
+                    </p>
+                    <!-- Payment timeout: still unpaid - when the deadline is and how long is left. -->
+                    <div th:replace="~{fragments/payment-timer :: timer(${booking})}"></div>
+                    <!-- Payment timeout: payment wasn't completed before the deadline, so the seats were released. -->
+                    <div th:if="${booking.status.name() == 'EXPIRED'}" class="alert alert-secondary mt-3 mb-0">
+                        This booking expired because payment wasn't completed in time. The seats have been released
+                        and nothing was charged. <a class="alert-link" th:href="@{/bookings/new(showtimeId=${booking.showtime.id})}">Start a new booking</a>
+                    </div>
+
+                    <!-- Bank Transfer only: the booking stays PENDING with no ticket until an admin
+                         reviews the uploaded receipt - see BookingService#createBooking/#confirmBankTransferBooking. -->
+                    <div th:if="${booking.status.name() == 'PENDING' and payment?.status?.name() == 'AWAITING_RECEIPT'}" class="alert alert-warning mt-3 mb-0">
+                        Your bank transfer receipt is <strong>pending admin review</strong>. A ticket will be issued once it's approved.
+                        <!-- Payment timeout: uploading the slip clears the deadline, so the countdown stops here. -->
+                        <div class="small mt-1" th:if="${payment.hasReceipt()}">&#10003; Slip received - the payment timer has stopped, your seats stay reserved while we review it.</div>
+                        <a class="alert-link" th:href="@{/bookings/{id}/upload-receipt(id=${booking.id})}">
+                            <span th:text="${payment.hasReceipt()} ? 'Replace receipt' : 'Upload receipt'">Upload receipt</span>
+                        </a>
+                    </div>
+                    <div th:if="${payment?.status?.name() == 'RECEIPT_REJECTED'}" class="alert alert-danger mt-3 mb-0">
+                        Your bank transfer receipt was rejected, so this booking was cancelled. Please try booking again.
+                    </div>
+
+                    <div th:if="${ticket != null and booking.status.name() == 'CONFIRMED'}">
+                        <hr>
+                        <p class="mb-2">Show this QR code at the entrance:</p>
+                        <img th:src="@{/bookings/{id}/qr-code(id=${booking.id})}" alt="QR ticket" width="200" height="200">
+                        <p class="small text-muted mt-2" th:text="'Ticket code: ' + ${ticket.qrCodeData}">code</p>
+                        <p>
+                            <span class="badge" th:classappend="${ticket.status.name() == 'VALID'} ? 'bg-success' : 'bg-secondary'"
+                                  th:text="${ticket.status}">VALID</span>
+                        </p>
+                    </div>
+
+                    <a th:if="${booking.status.name() == 'CONFIRMED'}"
+                       class="btn btn-outline-primary mt-3" th:href="@{/bookings/{id}/download-ticket(id=${booking.id})}">Download Ticket (PDF)</a>
+                    <a th:if="${booking.status.name() == 'CONFIRMED' and booking.showtime.dateTime.isAfter(T(java.time.LocalDateTime).now())}"
+                       class="btn btn-outline-secondary mt-3" th:href="@{/bookings/{id}/edit(id=${booking.id})}">Edit Seats</a>
+                    <a class="btn btn-outline-secondary mt-3" th:href="@{/bookings}">Back to My Bookings</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

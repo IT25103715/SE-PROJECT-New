@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Upload Receipt')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title mb-3">Upload Bank Transfer Receipt</h3>
+                    <p class="text-muted">
+                        Booking <strong th:text="'#' + ${booking.id}">#1</strong> for
+                        <strong th:text="${booking.showtime.movie.title}">Movie</strong> is on hold while we confirm
+                        your payment. Please upload a photo or PDF of your bank transfer receipt for review -
+                        your ticket will be issued once an admin approves it.
+                    </p>
+                    <!-- Payment timeout: a Bank Transfer booking with no receipt is released after 24 hours.
+                         Once a receipt is uploaded the deadline is cleared and the admin decides. -->
+                    <th:block th:if="${!payment.hasReceipt()}">
+                        <div th:replace="~{fragments/payment-timer :: timer(${booking})}"></div>
+                    </th:block>
+
+                    <!-- Where to send the money - from the ACTIVE Bank Transfer payment option the
+                         Payment Manager configured (BookingController#addBankTransferDetails). -->
+                    <div class="card ch-bank-details mb-3" th:if="${bankOption != null}">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Transfer to this account</h5>
+                            <th:block th:if="${bankOption.hasBankDetails()}">
+                                <dl class="row mb-2 small">
+                                    <dt class="col-5 col-sm-4">Bank</dt>
+                                    <dd class="col-7 col-sm-8" th:text="${bankOption.bankName}">Commercial Bank of Ceylon</dd>
+                                    <dt class="col-5 col-sm-4">Branch</dt>
+                                    <dd class="col-7 col-sm-8" th:text="${bankOption.branchName}">Colombo 03</dd>
+                                    <dt class="col-5 col-sm-4">Account Name</dt>
+                                    <dd class="col-7 col-sm-8" th:text="${bankOption.accountHolderName}">CinemaX Lanka (Pvt) Ltd</dd>
+                                    <dt class="col-5 col-sm-4">Account Number</dt>
+                                    <dd class="col-7 col-sm-8"><strong th:text="${bankOption.accountNumber}">1000123456</strong></dd>
+                                    <dt class="col-5 col-sm-4">Branch Code</dt>
+                                    <dd class="col-7 col-sm-8" th:text="${bankOption.branchCode}">7056-003</dd>
+                                    <th:block th:if="${!#strings.isEmpty(bankOption.swiftCode)}">
+                                        <dt class="col-5 col-sm-4">SWIFT Code</dt>
+                                        <dd class="col-7 col-sm-8" th:text="${bankOption.swiftCode}">CCEYLKLX</dd>
+                                    </th:block>
+                                </dl>
+                                <div class="alert alert-warning small mb-0">
+                                    <div th:text="${bankOption.paymentReferenceInstructions}">Please use your Booking ID as the payment reference.</div>
+                                    <div class="mt-1">Your Booking ID: <strong th:text="'#' + ${booking.id}">#1</strong></div>
+                                </div>
+                            </th:block>
+                            <!-- Older option saved before the bank fields existed - show what it has. -->
+                            <p class="small mb-0" th:unless="${bankOption.hasBankDetails()}"
+                               th:text="${bankOption.providerDetails} ?: 'Bank details are being updated - please contact the cinema for the account to transfer to.'">
+                                Bank details
+                            </p>
+                        </div>
+                    </div>
+                    <div class="alert alert-secondary small" th:if="${bankOption == null}">
+                        Bank details aren't available right now - please contact the cinema for the account to transfer to.
+                    </div>
+
+                    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}">Error</div>
+                    <div th:if="${payment.hasReceipt()}" class="alert alert-info small">
+                        A receipt was already uploaded on
+                        <span th:text="${#temporals.format(payment.receiptUploadedAt, 'dd MMM yyyy, HH:mm')}">date</span>
+                        and is waiting on admin review. Uploading a new file below replaces it.
+                    </div>
+
+                    <form th:action="@{/bookings/{id}/upload-receipt(id=${booking.id})}" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label" for="receiptFile">Receipt file (JPG, PNG, WEBP or PDF, max 5MB)</label>
+                            <input type="file" class="form-control" id="receiptFile" name="receiptFile"
+                                   accept="image/jpeg,image/png,image/webp,application/pdf" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload Receipt</button>
+                        <a class="btn btn-outline-secondary" th:href="@{/bookings/{id}(id=${booking.id})}">Back to Booking</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

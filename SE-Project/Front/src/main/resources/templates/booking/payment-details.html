@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Payment Details')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <h2 class="mb-4">Payment Details</h2>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="ch-payment-panel">
+                <form th:action="@{/bookings}" method="post" id="payForm" novalidate>
+                    <input type="hidden" name="showtimeId" th:value="${showtimeId}">
+                    <input type="hidden" th:each="id : ${seatIds}" name="seatIds" th:value="${id}">
+                    <input type="hidden" name="paymentMethod" value="CARD">
+                    <input type="hidden" name="promoCode" th:value="${promoCode}">
+                    <!-- Same food & parking chosen on the seat map, re-sent with "Pay Now". -->
+                    <input type="hidden" th:each="value : ${foodValues}" name="food" th:value="${value}">
+                    <input type="hidden" th:each="value : ${comboValues}" name="foodCombo" th:value="${value}">
+                    <input type="hidden" name="parking" value="true" th:if="${parkingAdded}">
+                    <!-- Payment timeout: the same 10-minute seat hold that started on the seat map's pay
+                         step. The countdown continues from the seconds the server says are left; at zero
+                         Pay Now is disabled, and BookingController#create refuses a late payment anyway. -->
+                    <input type="hidden" name="holdId" th:value="${holdId}">
+                    <div id="holdTimerBox" class="alert alert-info py-2" role="status"
+                         th:attr="data-seconds-left=${holdSecondsLeft}">
+                        Time remaining to complete payment: <strong id="holdTimerText">--:--</strong>
+                        <div class="small">Your seats are reserved for you until <strong id="holdTimerUntil">--:--</strong> - pay before then.</div>
+                    </div>
+                    <div id="holdExpiredBox" class="alert alert-danger d-none" role="alert">
+                        Your reserved seats have been released. Please start a new booking.
+                        <a class="alert-link" th:href="@{/bookings/new(showtimeId=${showtimeId})}">Start a new booking</a>
+                    </div>
+
+                    <div th:if="${summary.promoWarning != null}" class="alert alert-warning small">
+                        Coupon not applied (<span th:text="${summary.promoWarning}">reason</span>) &mdash; you'll be charged full price.
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="cardholderName">Cardholder Name</label>
+                        <input type="text" class="form-control" id="cardholderName" placeholder="Name on card" autocomplete="off">
+                        <div class="invalid-feedback">Enter the cardholder's name.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="cardNumber">Card Number</label>
+                        <input type="text" class="form-control" id="cardNumber" placeholder="1234 5678 9012 3456"
+                               inputmode="numeric" maxlength="19" autocomplete="off">
+                        <div class="invalid-feedback">Card number must be 16 digits.</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label" for="cardExpiry">Expiry (MM/YY)</label>
+                            <input type="text" class="form-control" id="cardExpiry" placeholder="MM/YY"
+                                   inputmode="numeric" maxlength="5" autocomplete="off">
+                            <div class="invalid-feedback">Enter a valid MM/YY expiry.</div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label" for="cardCvv">CVV</label>
+                            <input type="password" class="form-control" id="cardCvv" placeholder="&bull;&bull;&bull;"
+                                   inputmode="numeric" maxlength="3" autocomplete="off">
+                            <div class="invalid-feedback">CVV must be 3 digits.</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label d-block">Card Type</label>
+                        <div class="btn-group" role="group" aria-label="Card type">
+                            <input type="radio" class="btn-check" name="cardType" id="cardTypeVisa" checked>
+                            <label class="btn btn-outline-light ch-card-type-option" for="cardTypeVisa">VISA</label>
+                            <input type="radio" class="btn-check" name="cardType" id="cardTypeMastercard">
+                            <label class="btn btn-outline-light ch-card-type-option" for="cardTypeMastercard">Mastercard</label>
+                        </div>
+                    </div>
+
+                    <!-- "I'm not a robot" check - see fragments/human-check.html and
+                         HumanVerificationService. Checked in BookingController#create before any payment runs. -->
+                    <div th:replace="~{fragments/human-check :: widget}"></div>
+
+                    <!-- Consent - a separate, independent check from the security question above
+                         (see fragments/terms.html; BookingController#create enforces both). -->
+                    <div th:replace="~{fragments/terms :: consent}"></div>
+
+                    <button type="submit" class="btn btn-ch-accent w-100" id="payNowBtn" disabled>Pay Now</button>
+                    <p class="small text-white-50 mt-2 mb-0">Simulated payment for demo purposes only &mdash; no real card is charged.</p>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card ch-order-summary">
+                <div class="card-body">
+                    <h5 class="card-title" th:text="${summary.showtime.movie.title}">Movie</h5>
+                    <p class="text-muted small mb-2">
+                        <span th:text="${summary.showtime.cinemaHall.name}">Hall</span> &middot;
+                        <span th:text="${#temporals.format(summary.showtime.dateTime, 'dd MMM yyyy, HH:mm')}">Date</span>
+                    </p>
+                    <p class="mb-1">Seats:
+                        <strong>
+                            <span th:each="seat, iter : ${summary.seats}">
+                                <span th:text="${seat.seatCode}">A1</span><span th:if="${!iter.last}">, </span>
+                            </span>
+                        </strong>
+                    </p>
+                    <hr>
+                    <div class="d-flex justify-content-between small" th:if="${!#lists.isEmpty(summary.foodLines) or summary.parkingAdded}">
+                        <span th:text="'Seats (' + ${#lists.size(summary.seats)} + ')'">Seats</span>
+                        <span th:text="'Rs. ' + ${summary.seatsTotal}">0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between small" th:each="line : ${summary.foodLines}">
+                        <span><span class="badge bg-danger me-1" th:if="${line.combo()}">Combo</span><span th:text="${line.quantity()} + ' x ' + ${line.name()}">2 x Large Popcorn</span></span>
+                        <span th:text="'Rs. ' + ${line.lineTotal()}">0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between small" th:if="${summary.parkingAdded}">
+                        <span th:text="${summary.parkingLabel}">Standard Parking</span>
+                        <span th:text="'Rs. ' + ${summary.parkingFee}">0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <span>Subtotal</span>
+                        <span th:text="'Rs. ' + ${summary.originalPrice}">0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between small text-success" th:if="${summary.promoCode != null}">
+                        <span th:text="'Coupon (' + ${summary.promoCode} + ')'">Coupon</span>
+                        <span th:text="'- Rs. ' + ${summary.discountAmount}">0.00</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold fs-5">
+                        <span>Total</span>
+                        <span th:text="'Rs. ' + ${summary.totalPrice}">0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div id="payOverlay" class="ch-pay-overlay d-none">
+    <div class="text-center text-white">
+        <div class="spinner-border text-light mb-3" role="status"></div>
+        <p>Processing payment&hellip;</p>
+    </div>
+</div>
+
+<div th:replace="~{fragments/terms :: modal}"></div>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script>
+    const nameInput = document.getElementById('cardholderName');
+    const numberInput = document.getElementById('cardNumber');
+    const expiryInput = document.getElementById('cardExpiry');
+    const cvvInput = document.getElementById('cardCvv');
+    const payNowBtn = document.getElementById('payNowBtn');
+
+    // Input masks - purely cosmetic formatting, not real card validation
+    numberInput.addEventListener('input', function () {
+        const digits = this.value.replace(/\D/g, '').slice(0, 16);
+        this.value = digits.replace(/(.{4})/g, '$1 ').trim();
+        validate();
+    });
+
+    expiryInput.addEventListener('input', function () {
+        const digits = this.value.replace(/\D/g, '').slice(0, 4);
+        this.value = digits.length > 2 ? digits.slice(0, 2) + '/' + digits.slice(2) : digits;
+        validate();
+    });
+
+    cvvInput.addEventListener('input', function () {
+        this.value = this.value.replace(/\D/g, '').slice(0, 3);
+        validate();
+    });
+
+    nameInput.addEventListener('input', validate);
+
+    // The "I'm not a robot" and consent boxes are deliberately NOT part of validate() - Pay Now
+    // stays clickable once the card fields are filled, so clicking it with either box unticked
+    // shows that box's error instead of a silently disabled button.
+    const termsCheckbox = document.getElementById('termsAccepted');
+    termsCheckbox.addEventListener('change', function () {
+        if (this.checked) this.classList.remove('is-invalid');
+    });
+
+    function fieldValid(input, isValid) {
+        input.classList.toggle('is-invalid', !isValid);
+        input.classList.toggle('is-valid', isValid);
+        return isValid;
+    }
+
+    function validate() {
+        const nameOk = fieldValid(nameInput, nameInput.value.trim().length > 0);
+        const numberOk = fieldValid(numberInput, numberInput.value.replace(/\D/g, '').length === 16);
+        const expiryOk = fieldValid(expiryInput, /^(0[1-9]|1[0-2])\/\d{2}$/.test(expiryInput.value));
+        const cvvOk = fieldValid(cvvInput, /^\d{3}$/.test(cvvInput.value));
+        const allOk = nameOk && numberOk && expiryOk && cvvOk;
+        payNowBtn.disabled = !allOk || holdExpired;
+        return allOk && !holdExpired;
+    }
+
+    // ---------- Payment timeout countdown (continues the seat map's 10-minute hold) ----------
+    const holdTimerBox = document.getElementById('holdTimerBox');
+    const holdTimerText = document.getElementById('holdTimerText');
+    const holdDeadline = Date.now() + Math.max(0, Number(holdTimerBox.dataset.secondsLeft) || 0) * 1000;
+    let holdExpired = false;
+    document.getElementById('holdTimerUntil').textContent =
+        new Date(holdDeadline).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+    const holdTicker = setInterval(tickHold, 1000);
+    tickHold();
+
+    function tickHold() {
+        const total = Math.max(0, Math.ceil((holdDeadline - Date.now()) / 1000));
+        holdTimerText.textContent = String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+        holdTimerBox.classList.toggle('alert-warning', total <= 60);
+        holdTimerBox.classList.toggle('alert-info', total > 60);
+        if (total === 0) {
+            clearInterval(holdTicker);
+            holdExpired = true;
+            holdTimerBox.classList.add('d-none');
+            document.getElementById('holdExpiredBox').classList.remove('d-none');
+            payNowBtn.disabled = true;
+        }
+    }
+
+    // Simulated payment only, per Proposal Document scope - no real gateway integration
+    document.getElementById('payForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (!validate()) return;
+        // Both checks are independent - flag every one that's missing, not just the first.
+        const humanOk = window.humanCheck.passed();
+        const termsOk = termsCheckbox.checked;
+        if (!humanOk) window.humanCheck.showError();
+        if (!termsOk) termsCheckbox.classList.add('is-invalid');
+        if (!humanOk || !termsOk) {
+            if (!humanOk) window.humanCheck.focus(); else termsCheckbox.focus();
+            return;
+        }
+
+        payNowBtn.disabled = true;
+        document.getElementById('payOverlay').classList.remove('d-none');
+        const form = this;
+        setTimeout(function () {
+            form.submit();
+        }, 1400);
+    });
+</script>
+</body>
+</html>

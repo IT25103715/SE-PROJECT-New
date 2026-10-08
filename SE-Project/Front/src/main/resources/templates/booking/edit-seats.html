@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Edit Seats')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <h2 th:text="${showtime.movie.title}">Movie</h2>
+    <p class="text-muted">
+        <span th:text="${showtime.cinemaHall.name}">Hall</span> &mdash;
+        <span th:text="${#temporals.format(showtime.dateTime, 'dd MMM yyyy, HH:mm')}">Date</span>
+    </p>
+    <p class="text-muted small">
+        You can change which seats you sit in, but the seat count must stay the same as your
+        original booking (<strong th:text="${booking.bookingSeats.size()}">2</strong> seat(s)).
+    </p>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}">Error</div>
+
+    <form th:action="@{/bookings/{id}/edit(id=${booking.id})}" method="post" id="editForm">
+        <!-- Same theater layout as booking/seatmap.html (curved screen, lettered rows, numbered
+             seat blocks, centre aisle); seat codes are read from data-seat-code. -->
+        <div id="seatMapContainer">
+            <div class="ch-screen" aria-hidden="true"><span>SCREEN</span></div>
+            <div class="seat-map mb-3">
+                <div class="seat-row" th:each="rowEntry : ${seatsByRow}"
+                     th:with="rowSize=${rowEntry.value.size()}">
+                    <span class="seat-row-label" th:text="${rowEntry.key}">A</span>
+                    <div class="seat-row-seats">
+                        <div th:each="seat, iter : ${rowEntry.value}"
+                             class="seat"
+                             th:classappend="${(bookedSeatIds.contains(seat.id) ? 'booked' : (currentSeatIds.contains(seat.id) ? 'selected' : ''))
+                                     + (rowSize >= 6 and rowSize % 2 == 0 and iter.index == rowSize / 2 ? ' aisle-before' : '')}"
+                             th:text="${seat.seatNumber}"
+                             th:attr="data-seat-id=${seat.id},data-seat-code=${seat.seatCode},title=${seat.seatCode}"
+                             onclick="toggleSeat(this)">1</div>
+                    </div>
+                    <span class="seat-row-label" th:text="${rowEntry.key}">A</span>
+                </div>
+            </div>
+
+            <div class="seat-legend mb-4">
+                <span><span class="seat-swatch"></span> Available</span>
+                <span><span class="seat-swatch selected"></span> Selected</span>
+                <span><span class="seat-swatch booked"></span> Booked</span>
+            </div>
+        </div>
+
+        <p>
+            Selected seats: <strong id="selectedList">none</strong>
+            (<span id="selectedCount">0</span> / <span th:text="${booking.bookingSeats.size()}">2</span> required)
+        </p>
+
+        <button type="submit" class="btn btn-primary" id="saveBtn" disabled>Save Seats</button>
+        <a class="btn btn-outline-secondary" th:href="@{/bookings/{id}(id=${booking.id})}">Cancel</a>
+    </form>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script th:inline="javascript">
+    const requiredCount = /*[[${booking.bookingSeats.size()}]]*/ 1;
+    const selectedSeats = new Set();
+    // Real seats only ([data-seat-id]) - the legend used to share the .seat class, so its "Selected"
+    // swatch was picked up here as a seat with a null id and crashed the page on load.
+    document.querySelectorAll('.seat.selected[data-seat-id]').forEach(el => selectedSeats.add(el.getAttribute('data-seat-id')));
+
+    function toggleSeat(el) {
+        if (el.classList.contains('booked')) return;
+        const seatId = el.getAttribute('data-seat-id');
+        if (selectedSeats.has(seatId)) {
+            selectedSeats.delete(seatId);
+            el.classList.remove('selected');
+        } else {
+            selectedSeats.add(seatId);
+            el.classList.add('selected');
+        }
+        updateSummary();
+    }
+
+    function selectedSeatCodes() {
+        return [...selectedSeats].map(id => document.querySelector('.seat[data-seat-id="' + id + '"]').dataset.seatCode);
+    }
+
+    function updateSummary() {
+        const form = document.getElementById('editForm');
+        form.querySelectorAll('input[name="seatIds"]').forEach(i => i.remove());
+        selectedSeats.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'seatIds';
+            input.value = id;
+            form.appendChild(input);
+        });
+
+        document.getElementById('selectedList').textContent = selectedSeats.size ? selectedSeatCodes().join(', ') : 'none';
+        document.getElementById('selectedCount').textContent = selectedSeats.size;
+        document.getElementById('saveBtn').disabled = selectedSeats.size !== requiredCount;
+    }
+
+    updateSummary();
+</script>
+</body>
+</html>
