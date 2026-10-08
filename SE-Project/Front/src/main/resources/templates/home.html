@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Home')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div th:if="${param.deactivated}" class="alert alert-info">Your account has been deactivated.</div>
+    <div th:if="${param.accountDeleted}" class="alert alert-info">Your account has been deleted.</div>
+    <div th:if="${param.loggedOut}" class="alert alert-success">You have been logged out.</div>
+
+    <!-- Hero carousel: features the first few movies that are Now Showing. -->
+    <div id="heroCarousel" class="carousel slide ch-hero-carousel mb-5" data-bs-ride="carousel"
+         data-bs-interval="5500" data-bs-pause="false"
+         th:if="${!#lists.isEmpty(nowShowing)}">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#heroCarousel" th:each="card, stat : ${nowShowing}"
+                    th:if="${stat.index < 5}" th:attr="data-bs-slide-to=${stat.index},aria-label='Slide ' + ${stat.count}"
+                    th:classappend="${stat.first} ? 'active' : ''"></button>
+        </div>
+        <div class="carousel-inner">
+            <div class="carousel-item" th:each="card, stat : ${nowShowing}" th:if="${stat.index < 5}"
+                 th:classappend="${stat.first} ? 'active' : ''">
+                <div class="ch-hero-slide">
+                    <img th:if="${card.movie.posterUrl}" th:src="${card.movie.posterUrl}" class="ch-hero-bg" alt="">
+                    <div class="ch-hero-content">
+                        <div class="row align-items-center g-4">
+                            <div class="col-md-8">
+                                <span class="ch-hero-kicker">Now Showing &middot; CinemaX Lanka</span>
+                                <h1 class="ch-hero-title" th:text="${card.movie.title}">Title</h1>
+                                <p class="mb-2">
+                                    <span class="text-white-50 me-2" th:text="${card.movie.genre}">Genre</span>
+                                    <span class="badge ch-lang-badge" th:text="${card.movie.language}">ENGLISH</span>
+                                </p>
+                                <p class="ch-hero-desc mb-4" th:text="${card.movie.description}">Description</p>
+                                <a class="btn btn-primary btn-lg px-4" th:href="@{/movies/{id}(id=${card.movie.id})}">View &amp; Book</a>
+                                <a class="btn btn-outline-light btn-lg ms-2" th:href="@{/movies}">All Movies</a>
+                            </div>
+                            <div class="col-md-4 d-none d-md-block text-center">
+                                <img th:if="${card.movie.posterUrl}" th:src="${card.movie.posterUrl}" class="ch-hero-poster" alt="poster">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+
+    <!-- Fallback banner while nothing is screening -->
+    <div class="p-5 mb-5 ch-hero text-white" th:if="${#lists.isEmpty(nowShowing)}">
+        <h1 class="display-5 fw-bold">CinemaX Lanka</h1>
+        <p class="col-md-8 fs-5">Book your seats online, skip the queue, and walk in with a QR ticket.</p>
+        <a class="btn btn-primary btn-lg" th:href="@{/movies}">Browse Movies</a>
+    </div>
+
+    <!-- Starting Soon: showtimes (any movie) starting within the next 2 hours, soonest first - for a
+         last-minute ticket. Not rendered at all when there are none. Each card counts down to its
+         start time in the browser (script below) and drops out once the showtime has started. -->
+    <section class="ch-soon-section" id="homeStartingSoon" th:if="${!#lists.isEmpty(startingSoon)}"
+             aria-labelledby="startingSoonHeading">
+        <div class="ch-soon-bar">
+            <h2 class="ch-soon-heading" id="startingSoonHeading">Starting Soon <span class="ch-soon-live" aria-hidden="true"></span></h2>
+            <span class="ch-soon-sub">Showtimes in the next 2 hours - grab a last-minute seat</span>
+        </div>
+        <div class="ch-carousel">
+            <button type="button" class="ch-arrow ch-arrow-left d-none" aria-label="Scroll left">
+                <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>
+            </button>
+            <div class="ch-row" data-panel="startingSoon">
+                <article class="ch-poster-card ch-soon-card" th:each="card : ${startingSoon}"
+                         th:attr="data-seconds=${card.secondsUntilStart}">
+                    <img th:if="${card.showtime.movie.posterUrl}" th:src="${card.showtime.movie.posterUrl}" class="ch-poster-img" alt="poster" loading="lazy">
+                    <div th:unless="${card.showtime.movie.posterUrl}" class="ch-poster-fallback">&#127909;</div>
+                    <div class="ch-soon-time">
+                        <span class="ch-soon-countdown" th:text="${card.startsInText}">Starts in 45 min</span>
+                        <time class="ch-soon-clock" th:datetime="${card.showtime.dateTime}"
+                              th:text="${#temporals.format(card.showtime.dateTime, 'h:mm a')}">7:30 PM</time>
+                    </div>
+                    <div class="ch-poster-info">
+                        <h3 class="ch-poster-title" th:text="${card.showtime.movie.title}">Title</h3>
+                        <span class="ch-poster-tag" th:text="${card.showtime.cinemaHall.name} + ' &middot; Rs. ' + ${card.showtime.price}">Hall 1 &middot; Rs. 1200</span>
+                        <span th:replace="~{fragments/rating :: stars(${ratings[card.showtime.movie.id]})}"></span>
+                    </div>
+                    <div class="ch-poster-overlay">
+                        <a class="ch-outline-btn" th:href="@{/bookings/new(showtimeId=${card.showtime.id})}">Book Now</a>
+                        <a class="ch-outline-btn" th:href="@{/movies/{id}(id=${card.showtime.movie.id})}">See More</a>
+                    </div>
+                </article>
+            </div>
+            <button type="button" class="ch-arrow ch-arrow-right d-none" aria-label="Scroll right">
+                <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>
+            </button>
+        </div>
+    </section>
+
+    <!-- Tabs: Now Showing / Coming Soon (client-side show/hide, no page reload).
+         Promotions has its own section near the bottom of the page (see #homeOffers). -->
+    <section class="ch-tabs-section" id="homeTabs">
+        <div class="ch-tabbar">
+            <div class="ch-tabs" role="tablist">
+                <button type="button" class="ch-tab active" role="tab" aria-selected="true" data-tab="nowShowing">Now Showing</button>
+                <button type="button" class="ch-tab" role="tab" aria-selected="false" data-tab="comingSoon">Coming Soon</button>
+                <button type="button" class="ch-tab" role="tab" aria-selected="false" data-tab="topRated">Top Rated</button>
+            </div>
+            <a class="ch-viewall" th:href="@{/movies}">View All
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            </a>
+        </div>
+
+        <div class="ch-carousel">
+            <button type="button" class="ch-arrow ch-arrow-left d-none" aria-label="Scroll left">
+                <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>
+            </button>
+
+            <!-- Now Showing -->
+            <div class="ch-row" data-panel="nowShowing">
+                <article class="ch-poster-card" th:each="card : ${nowShowing}">
+                    <img th:if="${card.movie.posterUrl}" th:src="${card.movie.posterUrl}" class="ch-poster-img" alt="poster" loading="lazy">
+                    <div th:unless="${card.movie.posterUrl}" class="ch-poster-fallback">&#127909;</div>
+                    <div class="ch-poster-info">
+                        <h3 class="ch-poster-title" th:text="${card.movie.title}">Title</h3>
+                        <span class="ch-poster-tag">In theaters now</span>
+                        <span th:replace="~{fragments/rating :: stars(${ratings[card.movie.id]})}"></span>
+                    </div>
+                    <div class="ch-poster-overlay">
+                        <a class="ch-outline-btn" th:href="@{/movies/{id}(id=${card.movie.id})}">See More</a>
+                        <a class="ch-outline-btn" th:href="@{/bookings/new(showtimeId=${card.nextShowtimeId})}">Buy Tickets</a>
+                    </div>
+                </article>
+                <p class="ch-empty" th:if="${#lists.isEmpty(nowShowing)}">No movies are screening right now - check back soon.</p>
+            </div>
+
+            <!-- Coming Soon -->
+            <div class="ch-row d-none" data-panel="comingSoon">
+                <article class="ch-poster-card" th:each="movie : ${comingSoon}">
+                    <img th:if="${movie.posterUrl}" th:src="${movie.posterUrl}" class="ch-poster-img" alt="poster" loading="lazy">
+                    <div th:unless="${movie.posterUrl}" class="ch-poster-fallback">&#127909;</div>
+                    <div class="ch-poster-info">
+                        <h3 class="ch-poster-title" th:text="${movie.title}">Title</h3>
+                        <span class="ch-poster-tag" th:text="${#temporals.format(movie.releaseDate, 'dd MMM yyyy')}">01 Jan 2027</span>
+                        <span th:replace="~{fragments/rating :: stars(${ratings[movie.id]})}"></span>
+                    </div>
+                    <div class="ch-poster-overlay">
+                        <a class="ch-outline-btn" th:href="@{/movies/{id}(id=${movie.id})}">See More</a>
+                    </div>
+                </article>
+                <p class="ch-empty" th:if="${#lists.isEmpty(comingSoon)}">No upcoming releases announced yet.</p>
+            </div>
+
+            <!-- Top Rated: movies with customer reviews, best average rating first (HomeController#topRated) -->
+            <div class="ch-row d-none" data-panel="topRated">
+                <article class="ch-poster-card ch-rated-card" th:each="card, st : ${topRated}">
+                    <img th:if="${card.movie.posterUrl}" th:src="${card.movie.posterUrl}" class="ch-poster-img" alt="poster" loading="lazy">
+                    <div th:unless="${card.movie.posterUrl}" class="ch-poster-fallback">&#127909;</div>
+                    <div class="ch-rated-badge">
+                        <span class="ch-rated-rank" th:text="'#' + ${st.count}">#1</span>
+                        <span class="ch-rated-score"><span aria-hidden="true">&#9733;</span> <span th:text="${card.rating.averageText}">4.5</span></span>
+                    </div>
+                    <div class="ch-poster-info">
+                        <h3 class="ch-poster-title" th:text="${card.movie.title}">Title</h3>
+                        <span class="ch-poster-tag" th:text="${card.nextShowtimeId != null} ? 'In theaters now' : ${card.movie.genre}">In theaters now</span>
+                        <span th:replace="~{fragments/rating :: stars(${card.rating})}"></span>
+                    </div>
+                    <div class="ch-poster-overlay">
+                        <a class="ch-outline-btn" th:href="@{/movies/{id}(id=${card.movie.id})}">See Reviews</a>
+                        <a class="ch-outline-btn" th:if="${card.nextShowtimeId != null}" th:href="@{/bookings/new(showtimeId=${card.nextShowtimeId})}">Buy Tickets</a>
+                    </div>
+                </article>
+                <p class="ch-empty" th:if="${#lists.isEmpty(topRated)}">No movies have been rated yet - watch a movie and be the first to review it.</p>
+            </div>
+
+            <button type="button" class="ch-arrow ch-arrow-right d-none" aria-label="Scroll right">
+                <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>
+            </button>
+        </div>
+    </section>
+
+    <!-- Offers & Promotions (bottom of the page): big poster-style offer cards with an
+         "Explore More" button under each, white round arrows to scroll. Same data as before
+         (HomeController): promotion codes customers can use right now + approved, available
+         food combos. Every poster is drawn in CSS/SVG from the offer's own data - no images. -->
+    <link rel="stylesheet" th:href="@{/css/offers.css}">
+    <section class="ch-offers-section" id="homeOffers" aria-labelledby="offersHeading">
+        <h2 class="ch-offers-heading" id="offersHeading">Offers &amp; Promotions</h2>
+
+        <div class="ch-carousel ch-offers-carousel">
+            <button type="button" class="ch-arrow ch-arrow-left ch-offer-arrow d-none" aria-label="Previous offers">
+                <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>
+            </button>
+
+            <div class="ch-row ch-offers-row" data-panel="promotions">
+                <!-- Promotion codes: the colour the Promotion Manager picked, or (Auto) a rotating one so neighbouring posters look different -->
+                <div class="ch-offer-item" th:each="promo, st : ${promotions}">
+                    <article class="ch-offer-poster" th:classappend="${promo.themeClass(st.index)}">
+                        <svg class="ch-offer-deco" viewBox="0 0 120 120" aria-hidden="true">
+                            <path d="M10 30 H110 V50 a10 10 0 0 0 0 20 V90 H10 V70 a10 10 0 0 0 0 -20 Z"
+                                  fill="none" stroke="currentColor" stroke-width="4"/>
+                            <line x1="80" y1="34" x2="80" y2="86" stroke="currentColor" stroke-width="3" stroke-dasharray="5 5"/>
+                        </svg>
+                        <span class="ch-member-ribbon" th:if="${promo.membersOnly}">&#9733; Members Only</span>
+                        <span class="ch-offer-kicker">Promo code</span>
+                        <p class="ch-offer-title" th:text="${promo.description}">Weekend special</p>
+                        <div class="ch-offer-big">
+                            <span th:text="${promo.discountType.name() == 'PERCENTAGE'} ? ${promo.discountValue.stripTrailingZeros().toPlainString()} + '%' : 'Rs. ' + ${promo.discountValue.stripTrailingZeros().toPlainString()}">20%</span>
+                            <small>OFF</small>
+                        </div>
+                        <div class="ch-offer-sub"
+                             th:text="${promo.discountType.name() == 'COMBO'} ? 'combo deal' : (${promo.foodOnly} ? 'on your food bill' : 'on your booking')">on your booking</div>
+                        <p class="ch-offer-cond" th:if="${promo.discountType.name() == 'COMBO'}"
+                           th:text="'With ' + ${#strings.substringBefore(#strings.substringAfter(promo.comboSummary, 'Combo: '), ' -> ')}">With 2+ seats + Large Popcorn</p>
+                        <p class="ch-offer-cond" th:if="${!#strings.isEmpty(promo.conditionsSummary)}" th:text="${promo.conditionsSummary}">when you book 2+ seats</p>
+                        <div class="ch-offer-code">Use code <strong th:text="${promo.code}">CODE10</strong></div>
+                        <div class="ch-offer-valid" th:text="'Valid till ' + ${#temporals.format(promo.endDate, 'dd MMM yyyy')}">Valid till</div>
+                    </article>
+                    <a class="ch-offer-btn" th:href="@{/movies}">Explore More</a>
+                </div>
+
+                <!-- Food combos: no code - picked at checkout -->
+                <div class="ch-offer-item" th:each="combo : ${foodCombos}">
+                    <article class="ch-offer-poster" th:classappend="${combo.themeClass()}">
+                        <svg class="ch-offer-deco" viewBox="0 0 120 120" aria-hidden="true">
+                            <path d="M30 45 L40 110 H80 L90 45 Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+                            <line x1="50" y1="48" x2="54" y2="108" stroke="currentColor" stroke-width="3"/>
+                            <line x1="70" y1="48" x2="66" y2="108" stroke="currentColor" stroke-width="3"/>
+                            <circle cx="40" cy="38" r="10" fill="currentColor"/><circle cx="58" cy="32" r="11" fill="currentColor"/>
+                            <circle cx="77" cy="36" r="10" fill="currentColor"/><circle cx="66" cy="22" r="8" fill="currentColor"/>
+                            <circle cx="48" cy="24" r="8" fill="currentColor"/>
+                        </svg>
+                        <span class="ch-offer-kicker">Food combo</span>
+                        <p class="ch-offer-title" th:text="${combo.name}">Movie Night Combo</p>
+                        <div class="ch-offer-big">
+                            <span th:text="'Rs. ' + ${combo.bundlePrice.stripTrailingZeros().toPlainString()}">Rs. 1000</span>
+                        </div>
+                        <div class="ch-offer-sub">
+                            <s th:text="'Rs. ' + ${combo.individualTotal.stripTrailingZeros().toPlainString()}">Rs. 1250</s>
+                            &middot; <span th:text="'save Rs. ' + ${combo.savings.stripTrailingZeros().toPlainString()}">save Rs. 250</span>
+                        </div>
+                        <ul class="ch-offer-list">
+                            <li th:each="part : ${combo.items}" th:text="${part.quantity} + ' x ' + ${part.foodItem.name}">1 x Large Popcorn</li>
+                        </ul>
+                        <div class="ch-offer-code">No code needed &middot; add it at checkout</div>
+                    </article>
+                    <a class="ch-offer-btn" th:href="@{/menu}">Explore More</a>
+                </div>
+
+                <p class="ch-empty" th:if="${#lists.isEmpty(promotions) and #lists.isEmpty(foodCombos)}">No active promotions right now.</p>
+            </div>
+
+            <button type="button" class="ch-arrow ch-arrow-right ch-offer-arrow d-none" aria-label="Next offers">
+                <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>
+            </button>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script>
+    // Card rows with left/right arrows - used by the movie tabs (#homeTabs) and by the
+    // Offers & Promotions section (#homeOffers). Tabs are optional: a section without them
+    // just has its single row.
+    (function () {
+        const canHover = window.matchMedia('(hover: hover)').matches;
+
+        function initCarousel(section) {
+            if (!section) return;
+            const tabs = section.querySelectorAll('button.ch-tab');
+            const rows = section.querySelectorAll('.ch-row');
+            const left = section.querySelector('.ch-arrow-left');
+            const right = section.querySelector('.ch-arrow-right');
+
+            function activeRow() { return section.querySelector('.ch-row:not(.d-none)'); }
+
+            // Arrows only appear when the visible row actually overflows in that direction.
+            function updateArrows() {
+                const row = activeRow();
+                if (!row) return;
+                const overflow = row.scrollWidth - row.clientWidth > 4;
+                left.classList.toggle('d-none', !overflow || row.scrollLeft <= 4);
+                right.classList.toggle('d-none', !overflow || row.scrollLeft + row.clientWidth >= row.scrollWidth - 4);
+            }
+
+            // Scroll by roughly one card (card width + the row's gap).
+            function scrollRow(direction) {
+                const row = activeRow();
+                const card = row.querySelector('.ch-poster-card, .ch-offer-item');
+                const gap = parseFloat(getComputedStyle(row).columnGap) || 16;
+                const step = card ? card.offsetWidth + gap : row.clientWidth * 0.8;
+                row.scrollBy({left: direction * step, behavior: 'smooth'});
+            }
+
+            tabs.forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    tabs.forEach(function (t) {
+                        const on = t === tab;
+                        t.classList.toggle('active', on);
+                        t.setAttribute('aria-selected', on ? 'true' : 'false');
+                    });
+                    rows.forEach(function (row) {
+                        row.classList.toggle('d-none', row.getAttribute('data-panel') !== tab.getAttribute('data-tab'));
+                    });
+                    activeRow().scrollLeft = 0;
+                    updateArrows();
+                });
+            });
+
+            left.addEventListener('click', function () { scrollRow(-1); });
+            right.addEventListener('click', function () { scrollRow(1); });
+            rows.forEach(function (row) { row.addEventListener('scroll', updateArrows, {passive: true}); });
+            window.addEventListener('resize', updateArrows);
+            window.addEventListener('load', updateArrows);
+
+            // Touch screens have no hover: tapping a card reveals its buttons instead.
+            if (!canHover) {
+                section.querySelectorAll('.ch-poster-card').forEach(function (card) {
+                    card.addEventListener('click', function (event) {
+                        if (event.target.closest('a')) return;
+                        const open = card.classList.contains('is-open');
+                        section.querySelectorAll('.ch-poster-card.is-open').forEach(function (c) { c.classList.remove('is-open'); });
+                        if (!open) card.classList.add('is-open');
+                    });
+                });
+            }
+            updateArrows();
+        }
+
+        initCarousel(document.getElementById('homeStartingSoon'));
+        initCarousel(document.getElementById('homeTabs'));
+        initCarousel(document.getElementById('homeOffers'));
+    })();
+
+    // Starting Soon: count each card down from the seconds the server measured at page load.
+    // Under 15 minutes the chip turns red; once a showtime starts its card is removed, and the
+    // whole section disappears when no cards are left.
+    (function () {
+        const section = document.getElementById('homeStartingSoon');
+        if (!section) return;
+        const loadedAt = Date.now();
+        const cards = Array.from(section.querySelectorAll('.ch-soon-card'));
+
+        function label(seconds) {
+            const minutes = Math.max(1, Math.ceil(seconds / 60));
+            if (minutes < 60) return 'Starts in ' + minutes + ' min';
+            const hours = Math.floor(minutes / 60), rest = minutes % 60;
+            return 'Starts in ' + hours + ' h' + (rest ? ' ' + rest + ' min' : '');
+        }
+
+        function tick() {
+            const elapsed = (Date.now() - loadedAt) / 1000;
+            cards.forEach(function (card) {
+                if (!card.isConnected) return;
+                const left = Number(card.dataset.seconds) - elapsed;
+                if (left <= 0) {
+                    card.remove();
+                    return;
+                }
+                card.querySelector('.ch-soon-countdown').textContent = label(left);
+                card.classList.toggle('is-imminent', left <= 15 * 60);
+            });
+            if (!section.querySelector('.ch-soon-card')) {
+                section.remove();
+                return;
+            }
+            window.dispatchEvent(new Event('resize'));   // refresh the row's arrows
+        }
+        tick();
+        setInterval(tick, 30000);
+    })();
+</script>
+</body>
+</html>

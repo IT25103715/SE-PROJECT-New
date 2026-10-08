@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Food & Drinks')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <h2 class="mb-0">Food &amp; Drinks</h2>
+        <a class="btn btn-primary" th:href="@{/movies}">Book a Movie</a>
+    </div>
+    <p class="text-muted">Add any of these to your booking at checkout, right after you pick your seats - no code needed.</p>
+
+    <h4 class="mt-4" th:if="${!#lists.isEmpty(foodCombos)}">Combo packs</h4>
+    <div class="row g-3" th:if="${!#lists.isEmpty(foodCombos)}">
+        <div class="col-sm-6 col-lg-4" th:each="combo : ${foodCombos}">
+            <div class="card h-100 ch-order-summary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <h5 class="card-title mb-1" th:text="${combo.name}">Movie Night Combo</h5>
+                        <span class="badge bg-danger">Combo</span>
+                    </div>
+                    <p class="small text-muted mb-2" th:if="${combo.description}" th:text="${combo.description}">Perfect for two</p>
+                    <ul class="small mb-3 ps-3">
+                        <li th:each="part : ${combo.items}" th:text="${part.quantity} + ' x ' + ${part.foodItem.name}">1 x Large Popcorn</li>
+                    </ul>
+                    <div>
+                        <span class="fs-5 fw-bold" th:text="'Rs. ' + ${combo.bundlePrice}">Rs. 1000.00</span>
+                        <s class="text-muted ms-2" th:text="'Rs. ' + ${combo.individualTotal}">Rs. 1250.00</s>
+                    </div>
+                    <div class="small text-success" th:text="'You save Rs. ' + ${combo.savings}">You save Rs. 250.00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mt-4">Snacks &amp; drinks</h4>
+    <div class="row g-3" th:if="${!#lists.isEmpty(foodItems)}">
+        <div class="col-6 col-md-4 col-lg-3" th:each="item : ${foodItems}">
+            <div class="card h-100 ch-food-card">
+                <img th:if="${item.imageUrl != null}" th:src="@{${item.imageUrl}}" th:alt="${item.name}"
+                     class="ch-food-img" loading="lazy" alt="Large Popcorn">
+                <div th:unless="${item.imageUrl != null}" class="ch-food-img ch-food-img-placeholder" aria-hidden="true"
+                     th:text="${item.category.name() == 'DRINK'} ? '🥤' : '🍿'">🍿</div>
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title mb-1" th:text="${item.name}">Large Popcorn</h6>
+                    <span class="small text-muted mb-2" th:text="${item.category.displayLabel}">Snack</span>
+                    <span class="mt-auto fw-bold" th:text="'Rs. ' + ${item.price}">Rs. 650.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <p class="text-muted" th:if="${#lists.isEmpty(foodItems) and #lists.isEmpty(foodCombos)}">The menu is being updated - check back soon.</p>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
