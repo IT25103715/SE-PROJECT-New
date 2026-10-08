@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Movies')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <h2 class="mb-4">All Movies</h2>
+
+    <form th:action="@{/movies}" method="get" class="row gy-2 gx-2 align-items-end mb-4 ch-filter-bar">
+        <div class="col-auto">
+            <label class="form-label small text-muted mb-1">Language</label>
+            <select name="language" class="form-select form-select-sm">
+                <option value="">All Languages</option>
+                <option th:each="lang : ${languages}" th:value="${lang}" th:text="${lang}"
+                        th:selected="${lang == selectedLanguage}"></option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <label class="form-label small text-muted mb-1">Category</label>
+            <select name="genre" class="form-select form-select-sm">
+                <option value="">All Categories</option>
+                <option th:each="cat : ${genreCategories}" th:value="${cat}" th:text="${cat}"
+                        th:selected="${cat == selectedGenre}"></option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+            <a th:if="${selectedLanguage != null or selectedGenre != null}" class="btn btn-outline-secondary btn-sm" th:href="@{/movies}">Clear</a>
+        </div>
+    </form>
+
+    <div class="row row-cols-2 row-cols-md-4 g-4">
+        <div class="col" th:each="movie : ${movies}">
+            <div class="card h-100 movie-card">
+                <img th:if="${movie.posterUrl}" th:src="${movie.posterUrl}" class="card-img-top" alt="poster">
+                <div class="card-body">
+                    <h5 class="card-title" th:text="${movie.title}">Title</h5>
+                    <p class="card-text text-muted mb-1" th:text="${movie.genre}">Genre</p>
+                    <p class="mb-2"><span th:replace="~{fragments/rating :: stars(${ratings[movie.id]})}"></span></p>
+                    <span class="badge ch-lang-badge" th:text="${movie.language}">ENGLISH</span>
+                    <p class="card-text small mt-1" th:text="${movie.durationMinutes} + ' min'">Duration</p>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <a class="btn btn-primary btn-sm w-100" th:href="@{/movies/{id}(id=${movie.id})}">View &amp; Book</a>
+                </div>
+            </div>
+        </div>
+        <p th:if="${#lists.isEmpty(movies)}" class="text-muted">No movies match this filter.</p>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
