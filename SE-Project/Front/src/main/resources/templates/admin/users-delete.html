@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Delete User')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2 class="mb-4">Delete User</h2>
+            <p>Are you sure you want to permanently delete <strong th:text="${user.name}">Name</strong>
+                (<span th:text="${user.email}">email</span>)? This cannot be undone.</p>
+            <form th:action="@{/admin/users/{id}/delete(id=${user.id})}" method="post">
+                <button type="submit" class="btn btn-danger">Yes, delete</button>
+                <a class="btn btn-outline-secondary" th:href="@{/admin/users}">Cancel</a>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

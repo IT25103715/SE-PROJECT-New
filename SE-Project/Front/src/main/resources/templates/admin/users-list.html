@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Manage Users')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}">Error</div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Manage Users</h2>
+        <a class="btn btn-primary" th:href="@{/admin/users/new}">+ New User</a>
+    </div>
+
+    <table class="table table-striped bg-white">
+        <thead>
+        <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="user : ${users}">
+            <td th:text="${user.name}">Name</td>
+            <td th:text="${user.email}">Email</td>
+            <td th:text="${user.role}">Role</td>
+            <td>
+                <span class="badge" th:classappend="${user.status.name() == 'ACTIVE'} ? 'bg-success' : 'bg-secondary'"
+                      th:text="${user.status}">Status</span>
+            </td>
+            <td class="d-flex gap-1">
+                <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/users/{id}/edit(id=${user.id})}">Edit</a>
+                <form th:if="${user.status.name() == 'ACTIVE'}" th:action="@{/admin/users/{id}/suspend(id=${user.id})}" method="post">
+                    <button type="submit" class="btn btn-sm btn-outline-warning">Suspend</button>
+                </form>
+                <form th:if="${user.status.name() == 'SUSPENDED'}" th:action="@{/admin/users/{id}/activate(id=${user.id})}" method="post">
+                    <button type="submit" class="btn btn-sm btn-outline-success">Activate</button>
+                </form>
+                <a class="btn btn-sm btn-outline-danger" th:href="@{/admin/users/{id}/delete(id=${user.id})}">Delete</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

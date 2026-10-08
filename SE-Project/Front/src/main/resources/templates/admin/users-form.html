@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('User Form')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2 class="mb-4" th:text="${userForm.id != null} ? 'Edit User' : 'New User'">User Form</h2>
+
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}">Error</div>
+
+            <form th:action="${userForm.id != null} ? @{/admin/users/{id}/edit(id=${userForm.id})} : @{/admin/users/new}"
+                  th:object="${userForm}" method="post">
+                <input type="hidden" th:field="*{id}">
+                <div class="mb-3">
+                    <label class="form-label">Name</label>
+                    <input type="text" th:field="*{name}" class="form-control">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" th:field="*{email}" class="form-control">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                </div>
+                <!-- Phone numbers: neither is required on its own, but at least one must be filled in
+                     (PhoneNumberRule - the same check on registration, account edit and the admin form). -->
+                <fieldset class="mb-3">
+                    <legend class="form-label fs-6 mb-1">Phone numbers</legend>
+                    <div class="form-text mt-0 mb-2">At least one is required to save. Older accounts may have none yet - add one here.</div>
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <label class="form-label small mb-1" for="phoneNumber">Primary</label>
+                            <input type="tel" th:field="*{phoneNumber}" class="form-control" placeholder="e.g. 077 123 4567"
+                                   th:classappend="${#fields.hasErrors('phoneNumber')} ? 'is-invalid'">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small mb-1" for="phoneNumberAlt">Alternate</label>
+                            <input type="tel" th:field="*{phoneNumberAlt}" class="form-control" placeholder="optional"
+                                   th:classappend="${#fields.hasErrors('phoneNumber')} ? 'is-invalid'">
+                        </div>
+                    </div>
+                    <div class="text-danger small mt-1" th:if="${#fields.hasErrors('phoneNumber')}" th:errors="*{phoneNumber}">Please provide at least one phone number.</div>
+                </fieldset>
+                <div class="mb-3">
+                    <label class="form-label">Password <small class="text-muted">(leave blank to keep current)</small></label>
+                    <input type="password" th:field="*{password}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Role</label>
+                    <select th:field="*{role}" class="form-select">
+                        <option th:each="r : ${roles}" th:value="${r}" th:text="${r}"></option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <select th:field="*{status}" class="form-select">
+                        <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"></option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a class="btn btn-outline-secondary" th:href="@{/admin/users}">Cancel</a>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
