@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<!--
+    "Need Help?" assistant - a simple RULE-BASED helper, not an AI. The customer clicks one of a
+    fixed list of questions (no free-text chat, so no language understanding is needed):
+      - static questions: the answer is fixed text below (STATIC_ANSWERS)
+      - live questions: call our own read-only endpoints in HelpAssistantController
+        (/help/showing-today and /help/promo-check) - no external API, no API key.
+    Included from the shared footer (fragments/layout.html) and only rendered for logged-out
+    visitors and CUSTOMER accounts - never for admin/manager/staff roles.
+-->
+<div th:fragment="widget"
+     sec:authorize="!hasAnyRole('SYSTEM_ADMIN','MANAGER','PROMOTION_MANAGER','PAYMENT_MANAGER','CINEMA_STAFF','CUSTOMER_RELATIONS_EXECUTIVE')">
+    <style>
+        /* ---- CineBot: round robot launcher (drawn in SVG below - no image files) ---- */
+        .ch-help-toggle {
+            position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 1080;
+            width: 4rem; height: 4rem; padding: 0.55rem; border: 0; border-radius: 50%;
+            background: radial-gradient(circle at 30% 25%, #ff5a6e, var(--ch-accent, #d7263d) 55%, #8f1426);
+            box-shadow: 0 10px 26px rgba(215, 38, 61, 0.45), 0 0 0 3px rgba(255, 255, 255, 0.08);
+            animation: ch-bot-float 3.2s ease-in-out infinite;
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+        .ch-help-toggle:hover, .ch-help-toggle:focus-visible {
+            animation-play-state: paused; transform: scale(1.08);
+            box-shadow: 0 12px 30px rgba(215, 38, 61, 0.6), 0 0 0 4px rgba(255, 255, 255, 0.14);
+        }
+        .ch-help-toggle .ch-bot-svg { width: 100%; height: 100%; display: block; }
+        /* little status light on the launcher */
+        .ch-help-toggle::after {
+            content: ""; position: absolute; right: .2rem; top: .25rem; width: .8rem; height: .8rem;
+            border-radius: 50%; background: #2ee68a; border: 2px solid #131a2d;
+        }
+        /* "Hi! Need help?" speech bubble next to the launcher */
+        .ch-help-bubble {
+            position: fixed; right: 5.9rem; bottom: 2.2rem; z-index: 1079;
+            padding: .45rem .8rem; border-radius: 1rem 1rem .2rem 1rem;
+            background: #fff; color: #0a0e1a; font-size: .85rem; font-weight: 600; white-space: nowrap;
+            box-shadow: 0 6px 18px rgba(0,0,0,.35);
+            opacity: 0; transform: translateX(8px); pointer-events: none;
+            transition: opacity .25s ease, transform .25s ease;
+        }
+        .ch-help-bubble.show, .ch-help-toggle:hover + .ch-help-bubble { opacity: 1; transform: none; }
+        .ch-bot-eye { transform-box: fill-box; transform-origin: center; animation: ch-bot-blink 4.5s infinite; }
+        .ch-bot-antenna { animation: ch-bot-glow 1.6s ease-in-out infinite; }
+        @keyframes ch-bot-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        @keyframes ch-bot-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+        @keyframes ch-bot-glow { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+        @media (prefers-reduced-motion: reduce) {
+            .ch-help-toggle, .ch-bot-eye, .ch-bot-antenna { animation: none; }
+        }
+        .ch-help-panel {
+            position: fixed; right: 1.25rem; bottom: 6rem; z-index: 1080;
+            width: min(360px, calc(100vw - 2rem)); max-height: min(520px, calc(100vh - 7rem));
+            display: flex; flex-direction: column;
+            background: var(--ch-surface, #131a2d); color: var(--ch-text, #e9edf7);
+            border: 1px solid var(--ch-border, #263152); border-radius: var(--ch-radius, .85rem);
+            box-shadow: var(--ch-shadow, 0 6px 24px rgba(0,0,0,.35)); overflow: hidden;
+        }
+        .ch-help-head {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: .65rem .9rem; background: var(--ch-surface-2, #1a2340);
+            border-bottom: 1px solid var(--ch-border, #263152);
+        }
+        .ch-help-head strong { font-size: .95rem; display: block; line-height: 1.1; }
+        .ch-help-who { display: flex; align-items: center; gap: .6rem; }
+        .ch-help-status { font-size: .72rem; color: #2ee68a; }
+        .ch-help-status::before { content: ""; display: inline-block; width: .45rem; height: .45rem; margin-right: .3rem;
+            border-radius: 50%; background: #2ee68a; vertical-align: middle; }
+        /* robot avatar: in the header and next to each bot reply */
+        .ch-bot-avatar {
+            flex-shrink: 0; width: 2.1rem; height: 2.1rem; padding: .22rem; border-radius: 50%;
+            background: radial-gradient(circle at 30% 25%, #ff5a6e, var(--ch-accent, #d7263d) 60%, #8f1426);
+        }
+        .ch-bot-avatar .ch-bot-svg { width: 100%; height: 100%; display: block; }
+        .ch-help-row { display: flex; align-items: flex-end; gap: .45rem; margin-bottom: .5rem; }
+        .ch-help-row .ch-bot-avatar { width: 1.75rem; height: 1.75rem; padding: .18rem; }
+        .ch-help-row .ch-help-msg { margin-bottom: 0; flex: 1; }
+        .ch-help-row.user { justify-content: flex-end; }
+        .ch-help-body { padding: .8rem .9rem; overflow-y: auto; flex: 1; font-size: .9rem; }
+        .ch-help-msg { padding: .5rem .7rem; border-radius: .6rem; margin-bottom: .5rem; line-height: 1.4; }
+        .ch-help-msg.bot { background: var(--ch-surface-2, #1a2340); border-bottom-left-radius: .15rem; }
+        .ch-help-msg.user { background: var(--ch-accent-soft, rgba(215,38,61,.14)); margin-left: 2.5rem; text-align: right; }
+        .ch-help-msg ul { margin: .3rem 0 0; padding-left: 1.1rem; }
+        .ch-help-questions { display: flex; flex-direction: column; gap: .35rem; margin-top: .3rem; }
+        .ch-help-questions button { text-align: left; font-size: .85rem; }
+        .ch-help-promo { display: flex; gap: .4rem; margin-bottom: .5rem; }
+    </style>
+
+    <!-- Robot template, copied into the launcher, the header and each bot reply by the script below -->
+    <template id="chBotSvg">
+        <svg class="ch-bot-svg" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+            <line x1="32" y1="6" x2="32" y2="14" stroke="#cfd6e6" stroke-width="3" stroke-linecap="round"/>
+            <circle class="ch-bot-antenna" cx="32" cy="6" r="4.5" fill="#ff4d5e"/>
+            <rect x="4" y="27" width="6" height="14" rx="3" fill="#aab4c8"/>
+            <rect x="54" y="27" width="6" height="14" rx="3" fill="#aab4c8"/>
+            <rect x="9" y="14" width="46" height="40" rx="14" fill="#f2f5fb"/>
+            <rect x="9" y="44" width="46" height="10" rx="5" fill="#dfe4ef"/>
+            <rect x="15" y="21" width="34" height="22" rx="9" fill="#0d1222"/>
+            <ellipse class="ch-bot-eye" cx="25" cy="31" rx="4" ry="4.6" fill="#4dd9ff"/>
+            <ellipse class="ch-bot-eye" cx="39" cy="31" rx="4" ry="4.6" fill="#4dd9ff"/>
+            <path d="M26 37.5 Q32 41.5 38 37.5" fill="none" stroke="#4dd9ff" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+    </template>
+
+    <button type="button" class="ch-help-toggle" id="chHelpToggle" aria-expanded="false" aria-controls="chHelpPanel"
+            aria-label="Need help? Chat with CineBot" title="Need help? Chat with CineBot"></button>
+    <div class="ch-help-bubble" id="chHelpBubble" aria-hidden="true">Hi! Need help?</div>
+
+    <div class="ch-help-panel d-none" id="chHelpPanel" role="dialog" aria-label="CineBot help assistant">
+        <div class="ch-help-head">
+            <div class="ch-help-who">
+                <span class="ch-bot-avatar" id="chHelpHeadAvatar"></span>
+                <div>
+                    <strong>CineBot</strong>
+                    <span class="ch-help-status">Online &middot; CinemaX help</span>
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" id="chHelpClose" aria-label="Close help"></button>
+        </div>
+        <div class="ch-help-body" id="chHelpBody" aria-live="polite"></div>
+    </div>
+
+    <script th:inline="javascript">
+        (function () {
+            const showingUrl = /*[[@{/help/showing-today}]]*/ '/help/showing-today';
+            const promoUrl = /*[[@{/help/promo-check}]]*/ '/help/promo-check';
+            const bookingsUrl = /*[[@{/bookings}]]*/ '/bookings';
+            const feedbackUrl = /*[[@{/feedback}]]*/ '/feedback';
+            const seatMapUrl = /*[[@{/bookings/new}]]*/ '/bookings/new';
+
+            const toggle = document.getElementById('chHelpToggle');
+            const panel = document.getElementById('chHelpPanel');
+            const body = document.getElementById('chHelpBody');
+            const bubble = document.getElementById('chHelpBubble');
+            const robotSvg = document.getElementById('chBotSvg').innerHTML;
+
+            // Draw the robot on the launcher and in the panel header.
+            toggle.innerHTML = robotSvg;
+            document.getElementById('chHelpHeadAvatar').innerHTML = robotSvg;
+
+            // Say hi once per visit: the bubble pops up for a few seconds after the page loads.
+            let greeted = false;
+            try { greeted = sessionStorage.getItem('chBotGreeted') === '1'; } catch (e) { /* storage blocked */ }
+            if (!greeted) {
+                setTimeout(function () { bubble.classList.add('show'); }, 1200);
+                setTimeout(function () { bubble.classList.remove('show'); }, 6500);
+                try { sessionStorage.setItem('chBotGreeted', '1'); } catch (e) { /* ignore */ }
+            }
+
+            // Fixed answers - written by us, nothing generated.
+            const STATIC_ANSWERS = {
+                cancel: 'Go to <a href="' + bookingsUrl + '">My Bookings</a>, open the booking and click <strong>Cancel</strong>. '
+                    + 'If you cancel before the showtime starts, your refund is processed automatically.',
+                payment: 'We accept <strong>Apple Pay</strong>, <strong>PayPal</strong> and <strong>Bank Transfer</strong>. '
+                    + 'For Bank Transfer, you upload a photo or PDF of your transfer receipt after booking - '
+                    + 'your ticket is issued once an Admin approves it.',
+                promo: 'Type your promo code in the <strong>Coupon code</strong> box at checkout, before you pay. '
+                    + 'If a code is invalid or expired you\'ll see a warning, and your booking still goes through at full price.',
+                support: 'You can reach our team through the <a href="' + feedbackUrl + '">Feedback &amp; Complaints</a> page '
+                    + '(log in first) - we\'ll get back to you there.'
+            };
+
+            const QUESTIONS = [
+                {id: 'showing', text: 'What movies are showing today?'},
+                {id: 'promoCheck', text: 'Is my promo code still valid?'},
+                {id: 'cancel', text: 'How do I cancel a booking?'},
+                {id: 'payment', text: 'What payment methods do you accept?'},
+                {id: 'promo', text: 'How do I use a promo code?'},
+                {id: 'support', text: 'How do I contact support?'}
+            ];
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text == null ? '' : String(text);
+                return div.innerHTML;
+            }
+
+            // Each message sits in a row; bot replies get the little robot avatar beside them.
+            // Returns the bubble itself, so callers can still replace its text (e.g. "Checking...").
+            function addMessage(html, who) {
+                const row = document.createElement('div');
+                row.className = 'ch-help-row ' + who;
+                if (who === 'bot') {
+                    const avatar = document.createElement('span');
+                    avatar.className = 'ch-bot-avatar';
+                    avatar.innerHTML = robotSvg;
+                    row.appendChild(avatar);
+                }
+                const msg = document.createElement('div');
+                msg.className = 'ch-help-msg ' + who;
+                msg.innerHTML = html;
+                row.appendChild(msg);
+                body.appendChild(row);
+                body.scrollTop = body.scrollHeight;
+                return msg;
+            }
+
+            function showQuestions() {
+                const old = body.querySelector('.ch-help-questions');
+                if (old) old.remove();
+                const list = document.createElement('div');
+                list.className = 'ch-help-questions';
+                QUESTIONS.forEach(function (q) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'btn btn-sm btn-outline-light';
+                    button.textContent = q.text;
+                    button.addEventListener('click', function () { ask(q); });
+                    list.appendChild(button);
+                });
+                body.appendChild(list);
+                body.scrollTop = body.scrollHeight;
+            }
+
+            function ask(q) {
+                const old = body.querySelector('.ch-help-questions');
+                if (old) old.remove();
+                addMessage(escapeHtml(q.text), 'user');
+                if (STATIC_ANSWERS[q.id]) {
+                    addMessage(STATIC_ANSWERS[q.id], 'bot');
+                    showQuestions();
+                } else if (q.id === 'showing') {
+                    answerShowing();
+                } else if (q.id === 'promoCheck') {
+                    askPromoCode();
+                }
+            }
+
+            // Live: same data as the homepage "Now Showing" (HelpAssistantController#showingToday).
+            function answerShowing() {
+                const pending = addMessage('Checking today\'s showtimes...', 'bot');
+                fetch(showingUrl, {headers: {'Accept': 'application/json'}})
+                    .then(r => r.ok ? r.json() : Promise.reject())
+                    .then(function (data) {
+                        if (!data.movies || data.movies.length === 0) {
+                            pending.innerHTML = 'There are no upcoming showtimes scheduled right now - please check back soon.';
+                            return;
+                        }
+                        const items = data.movies.map(function (m) {
+                            const link = seatMapUrl + '?showtimeId=' + encodeURIComponent(m.showtimeId);
+                            return '<li><a href="' + link + '">' + escapeHtml(m.title) + '</a> - '
+                                + escapeHtml(m.time) + (m.hall ? ' (' + escapeHtml(m.hall) + ')' : '') + '</li>';
+                        }).join('');
+                        pending.innerHTML = (data.today
+                            ? 'Showing today:'
+                            : 'No more showtimes today - here are the next ones:') + '<ul>' + items + '</ul>';
+                    })
+                    .catch(function () {
+                        pending.innerHTML = 'Sorry, I couldn\'t load the showtimes right now. Please try again.';
+                    })
+                    .finally(showQuestions);
+            }
+
+            // Live: same coupon validation as checkout (HelpAssistantController#checkPromo).
+            function askPromoCode() {
+                const prompt = addMessage('Type your promo code and press Check:', 'bot');
+                const form = document.createElement('form');
+                form.className = 'ch-help-promo';
+                form.innerHTML = '<input type="text" class="form-control form-control-sm" maxlength="50" '
+                    + 'placeholder="e.g. WELCOME10" aria-label="Promo code" required>'
+                    + '<button type="submit" class="btn btn-sm btn-primary">Check</button>';
+                prompt.appendChild(form);
+                const input = form.querySelector('input');
+                input.focus();
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const code = input.value.trim();
+                    if (!code) return;
+                    form.remove();
+                    addMessage(escapeHtml(code), 'user');
+                    const pending = addMessage('Checking...', 'bot');
+                    fetch(promoUrl + '?code=' + encodeURIComponent(code), {headers: {'Accept': 'application/json'}})
+                        .then(r => r.ok ? r.json() : Promise.reject())
+                        .then(function (data) {
+                            pending.innerHTML = (data.valid ? '&#9989; ' : '&#10060; ') + escapeHtml(data.message);
+                        })
+                        .catch(function () {
+                            pending.innerHTML = 'Sorry, I couldn\'t check that code right now. Please try again.';
+                        })
+                        .finally(showQuestions);
+                });
+            }
+
+            function open() {
+                bubble.classList.remove('show');
+                panel.classList.remove('d-none');
+                toggle.setAttribute('aria-expanded', 'true');
+                if (!body.hasChildNodes()) {
+                    addMessage('Beep boop! I\'m <strong>CineBot</strong>, the CinemaX help robot. Pick a question below:', 'bot');
+                    showQuestions();
+                }
+            }
+
+            function close() {
+                panel.classList.add('d-none');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+
+            toggle.addEventListener('click', function () {
+                panel.classList.contains('d-none') ? open() : close();
+            });
+            document.getElementById('chHelpClose').addEventListener('click', close);
+        })();
+    </script>
+</div>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+    Checkout consent checkbox + the Terms & Conditions / Cancellation Policy popup it links to.
+    Shared by booking/payment-details.html (card) and booking/seatmap.html step 2 (wallet / bank
+    transfer). The box is submitted as termsAccepted=true and checked in BookingController#create,
+    separately from the math security question. A popup (not a separate page) so a customer
+    reading the terms doesn't lose the card details they've already typed.
+    Placeholder wording for the demo - not a real legal document.
+-->
+<div th:fragment="consent" id="termsBlock" class="form-check mb-3">
+    <input class="form-check-input" type="checkbox" id="termsAccepted" name="termsAccepted" value="true"
+           th:checked="${termsAccepted == true}"
+           th:classappend="${termsError != null} ? 'is-invalid' : ''">
+    <label class="form-check-label small" for="termsAccepted">
+        I confirm the booking details above are correct and I agree to the
+        <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms &amp; Conditions and Cancellation Policy</a>.
+    </label>
+    <div class="invalid-feedback" th:text="${termsError ?: 'Please tick this box to confirm your booking and accept the Terms & Conditions.'}">
+        Please tick this box to confirm your booking and accept the Terms &amp; Conditions.
+    </div>
+</div>
+
+<div th:fragment="modal" class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">Terms &amp; Conditions and Cancellation Policy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body small">
+                <p class="text-white-50">Sample terms for demonstration purposes only.</p>
+
+                <h6>1. Bookings</h6>
+                <p>A booking is confirmed once payment is completed and a ticket with a QR code is issued.
+                    Please check the movie, showtime, hall and seats before paying - each ticket is valid only
+                    for the showtime and seats shown on it.</p>
+
+                <h6>2. Payment</h6>
+                <p>Prices are shown in Sri Lankan Rupees and include any coupon discount applied at checkout.
+                    Bank transfer bookings stay pending until the uploaded receipt has been approved.</p>
+
+                <h6>3. Cancellation Policy</h6>
+                <p>Bookings can be cancelled from "My Bookings". A booking cancelled before the showtime starts
+                    is refunded in full; a booking cancelled after the showtime has started is not refunded.
+                    Cancelling a booking voids its ticket, so it can no longer be used for entry.</p>
+
+                <h6>4. Entry</h6>
+                <p>Please arrive before the showtime and have your QR ticket ready. Each ticket can be scanned
+                    only once. The cinema may refuse entry for tickets that have already been used.</p>
+
+                <h6>5. Changes</h6>
+                <p>The cinema may change showtimes or halls where necessary and will contact affected customers.
+                    These terms may be updated from time to time.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

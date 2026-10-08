@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Payment timeout for a booking that is already saved as PENDING with a deadline (today that is
+     a Bank Transfer with no receipt yet: 24 hours). Shows the clock time it ends plus a live
+     countdown. The countdown starts from the seconds the SERVER says are left, so a wrong clock
+     on the customer's device doesn't matter. Purely informational - BookingExpiryScheduler and
+     BookingService#attachBankTransferReceipt enforce the deadline on the server.
+     The 10-minute seat hold (every method) has its own countdown on booking/seatmap.html and payment-details.html. -->
+<div th:fragment="timer(booking)"
+     th:if="${booking.status.name() == 'PENDING' and booking.expiresAt != null}"
+     class="alert alert-info py-2 ch-pay-timer" role="status"
+     th:attr="data-seconds-left=${booking.secondsUntilExpiry()}">
+    <div class="ch-pay-timer-running">
+        Time remaining to complete payment: <strong class="ch-pay-timer-left">--:--:--</strong>
+        <div class="small">
+            Pay by <strong th:text="${#temporals.format(booking.expiresAt, 'dd MMM yyyy, hh:mm a')}">03 Oct 2026, 06:30 PM</strong>
+            - after that the booking expires and your seats are released.
+        </div>
+    </div>
+    <div class="ch-pay-timer-done d-none">
+        Time is up - this booking has expired and the seats have been released.
+        <a class="alert-link" th:href="@{/bookings/new(showtimeId=${booking.showtime.id})}">Start a new booking</a>
+    </div>
+    <script>
+        (function () {
+            const box = document.currentScript.closest('.ch-pay-timer');
+            const deadline = Date.now() + Math.max(0, Number(box.dataset.secondsLeft) || 0) * 1000;
+            const left = box.querySelector('.ch-pay-timer-left');
+            const pad = function (n) { return String(n).padStart(2, '0'); };
+            let ticker = null;
+            const tick = function () {
+                const total = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+                left.textContent = pad(Math.floor(total / 3600)) + ':' + pad(Math.floor(total / 60) % 60) + ':' + pad(total % 60);
+                box.classList.toggle('alert-warning', total <= 3600);
+                box.classList.toggle('alert-info', total > 3600);
+                if (total === 0) {
+                    clearInterval(ticker);
+                    box.classList.replace('alert-warning', 'alert-danger');
+                    box.querySelector('.ch-pay-timer-running').classList.add('d-none');
+                    box.querySelector('.ch-pay-timer-done').classList.remove('d-none');
+                }
+            };
+            tick();
+            ticker = setInterval(tick, 1000);
+        })();
+    </script>
+</div>
+</body>
+</html>
