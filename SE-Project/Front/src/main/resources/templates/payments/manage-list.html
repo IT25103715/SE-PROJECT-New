@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${archivedView} ? 'Archived Transactions' : 'Payments and Revenue')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 th:text="${archivedView} ? 'Archived Transactions' : 'Payments and Revenue'">Payments</h2>
+        <a th:if="${!archivedView}" class="btn btn-outline-secondary btn-sm" th:href="@{/manager/payments/archived}">View Archived</a>
+        <a th:if="${archivedView}" class="btn btn-outline-secondary btn-sm" th:href="@{/manager/payments}">Back to Transaction Log</a>
+    </div>
+
+    <div th:if="${!archivedView}" class="row mb-4 g-3">
+        <div class="col-md-4">
+            <div class="card bg-white h-100">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Revenue (Completed)</h6>
+                    <p class="fs-3 mb-0" th:text="'Rs. ' + ${totalRevenue}">0.00</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card bg-white h-100">
+                <div class="card-body">
+                    <h6 class="text-muted">Revenue by Branch (Cinema Hall)</h6>
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                        <tr th:each="entry : ${revenueByBranch}">
+                            <td th:text="${entry.key}">Hall A</td>
+                            <td th:text="'Rs. ' + ${entry.value}">0.00</td>
+                        </tr>
+                        <tr th:if="${#maps.isEmpty(revenueByBranch)}"><td class="text-muted">No completed transactions yet.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table class="table table-striped bg-white">
+        <thead>
+        <tr><th>Transaction Ref</th><th>Booking</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th th:if="${!archivedView}">Actions</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="payment : ${payments}">
+            <td th:text="${payment.transactionRef}">TXN-XXXXXXXX</td>
+            <td><a th:href="@{/bookings/{id}(id=${payment.bookingId})}" th:text="'Booking #' + ${payment.bookingId}">Booking #1</a></td>
+            <td th:text="'Rs. ' + ${payment.amount}">0.00</td>
+            <td th:text="${payment.method.displayLabel}">Method</td>
+            <td>
+                <span class="badge"
+                      th:classappend="${payment.status.name() == 'COMPLETED'} ? 'bg-success' : (${payment.status.name() == 'REFUNDED'} ? 'bg-info' : ((${payment.status.name() == 'FAILED'} or ${payment.status.name() == 'RECEIPT_REJECTED'}) ? 'bg-danger' : 'bg-warning'))"
+                      th:text="${payment.status}">Status</span>
+            </td>
+            <td th:text="${#temporals.format(payment.transactionDate, 'dd MMM yyyy, HH:mm')}">Date</td>
+            <td class="d-flex gap-1" th:if="${!archivedView}">
+                <form th:if="${payment.status.name() == 'COMPLETED'}" th:action="@{/manager/payments/{id}/refund(id=${payment.id})}" method="post" onsubmit="return confirm('Mark this transaction as refunded?');">
+                    <button type="submit" class="btn btn-sm btn-outline-info">Refund</button>
+                </form>
+                <form th:if="${payment.status.name() == 'PENDING'}" th:action="@{/manager/payments/{id}/fail(id=${payment.id})}" method="post">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Mark Failed</button>
+                </form>
+                <form th:action="@{/manager/payments/{id}/archive(id=${payment.id})}" method="post" onsubmit="return confirm('Archive this transaction record? It will be hidden from the log but kept for audit.');">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">Archive</button>
+                </form>
+            </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(payments)}"><td colspan="7" class="text-muted">No transactions to show.</td></tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
