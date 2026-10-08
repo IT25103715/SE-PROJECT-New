@@ -1,0 +1,304 @@
+/* ==========================================================================
+   Starting Soon row, movie star ratings, membership badges.
+   Kept in its own file (linked from fragments/layout.html) so it never
+   clashes with edits to style.css.
+   ========================================================================== */
+
+/* ---------- Star rating (fragments/rating.html) ---------- */
+.ch-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    line-height: 1;
+    white-space: nowrap;
+}
+.ch-stars {
+    position: relative;
+    display: inline-block;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.22);
+}
+.ch-stars::before { content: "\2605\2605\2605\2605\2605"; }
+.ch-stars-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    overflow: hidden;
+    white-space: nowrap;
+    color: #f5c518;
+}
+.ch-stars-fill::before { content: "\2605\2605\2605\2605\2605"; }
+.ch-rating-avg { font-weight: 700; color: #fff; }
+.ch-rating-count { color: var(--ch-muted, #9aa6c0); }
+.ch-rating-none { color: var(--ch-muted, #9aa6c0); font-style: italic; }
+
+/* On poster cards the rating sits under the title */
+.ch-poster-info .ch-rating { margin-top: 0.35rem; font-size: 0.72rem; }
+.ch-poster-info .ch-stars { font-size: 0.78rem; }
+
+/* Bigger version on the movie detail page */
+.ch-rating-lg { font-size: 1rem; }
+.ch-rating-lg .ch-stars { font-size: 1.25rem; }
+.ch-rating-lg .ch-rating-avg { font-size: 1.15rem; }
+
+/* "Top Rated" tab (homepage): rank + score chip at the top of each card */
+.ch-rated-badge {
+    position: absolute;
+    top: 0.6rem;
+    left: 0.6rem;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.55rem;
+    background: rgba(6, 9, 18, 0.82);
+    border: 1px solid rgba(245, 197, 24, 0.45);
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+}
+.ch-rated-rank { font-size: 0.72rem; font-weight: 700; color: var(--ch-muted, #9aa6c0); }
+.ch-rated-score { font-size: 1rem; font-weight: 800; color: #f5c518; }
+
+/* ---------- Reviews list on the movie detail page ---------- */
+.ch-reviews { margin-top: 2.5rem; }
+.ch-review {
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--ch-border, #263152);
+    border-radius: var(--ch-radius, 0.85rem);
+    background: var(--ch-surface, #131a2d);
+}
+.ch-review + .ch-review { margin-top: 0.75rem; }
+.ch-review-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.8rem;
+    margin-bottom: 0.4rem;
+}
+.ch-review-author { font-weight: 600; }
+.ch-review-date { color: var(--ch-muted, #9aa6c0); font-size: 0.8rem; }
+.ch-review-text { margin: 0; white-space: pre-line; }
+
+/* ---------- Starting Soon row (homepage) ---------- */
+.ch-soon-section { margin-bottom: 2.5rem; }
+.ch-soon-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.3rem 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--ch-border, #263152);
+}
+main.container .ch-soon-heading { margin: 0; font-size: 1.5rem; }
+.ch-soon-live {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: #ff4d5e;
+    box-shadow: 0 0 0 0 rgba(255, 77, 94, 0.6);
+    animation: ch-soon-pulse 1.8s infinite;
+    flex-shrink: 0;
+}
+@keyframes ch-soon-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 77, 94, 0.6); }
+    70% { box-shadow: 0 0 0 0.55rem rgba(255, 77, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 77, 94, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .ch-soon-live { animation: none; } }
+.ch-soon-sub { color: var(--ch-muted, #9aa6c0); font-size: 0.9rem; }
+
+/* Start time chip at the top of each card */
+.ch-soon-time {
+    position: absolute;
+    top: 0.6rem;
+    left: 0.6rem;
+    z-index: 2;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 0.1rem;
+    padding: 0.45rem 0.7rem;
+    border-radius: 0.55rem;
+    background: rgba(6, 9, 18, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+}
+.ch-soon-countdown {
+    white-space: nowrap;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    color: #ffb3bc;
+}
+.ch-soon-clock {
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #fff;
+    white-space: nowrap;
+}
+.ch-soon-card.is-imminent .ch-soon-time { background: rgba(215, 38, 61, 0.9); border-color: transparent; }
+.ch-soon-card.is-imminent .ch-soon-countdown { color: #fff; }
+
+/* ---------- Membership ---------- */
+.ch-member-badge {
+    background: linear-gradient(135deg, #f5c518, #e09b00);
+    color: #1a1300;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+/* "Members Only" ribbon on homepage offer cards */
+.ch-member-ribbon {
+    position: absolute;
+    top: 0.9rem;
+    right: 0.9rem;
+    z-index: 2;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #f5c518, #e09b00);
+    color: #1a1300;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+/* Account page membership panel */
+.ch-membership {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem 1.15rem;
+    margin-bottom: 1.5rem;
+    border-radius: var(--ch-radius, 0.85rem);
+    border: 1px solid var(--ch-border, #263152);
+    background: var(--ch-surface, #131a2d);
+}
+.ch-membership.is-member {
+    border-color: rgba(245, 197, 24, 0.55);
+    background: linear-gradient(135deg, rgba(245, 197, 24, 0.14), rgba(19, 26, 45, 0.9) 60%);
+}
+.ch-membership-icon {
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--ch-muted, #9aa6c0);
+}
+.ch-membership.is-member .ch-membership-icon { background: linear-gradient(135deg, #f5c518, #e09b00); color: #1a1300; }
+.ch-membership-title { font-weight: 700; margin: 0; }
+.ch-membership-text { margin: 0.15rem 0 0; color: var(--ch-muted, #9aa6c0); font-size: 0.9rem; }
+.ch-membership .progress { height: 0.45rem; margin-top: 0.55rem; background: rgba(255, 255, 255, 0.1); }
+.ch-membership .progress-bar { background: linear-gradient(90deg, #f5c518, #e09b00); }
+
+/* ---------- Customer footer (fragments/layout.html :: footer) ---------- */
+.ch-foot-feedback {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    padding: 1.25rem 1.4rem;
+    margin: 0 0 2.5rem;
+    border-radius: var(--ch-radius, 0.85rem);
+    border: 1px solid rgba(215, 38, 61, 0.35);
+    background: linear-gradient(120deg, rgba(215, 38, 61, 0.18), rgba(19, 26, 45, 0.6) 55%);
+}
+.ch-foot-feedback-icon {
+    flex-shrink: 0;
+    width: 3.1rem;
+    height: 3.1rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ch-accent, #d7263d);
+    color: #fff;
+}
+.ch-foot-feedback-text { flex: 1; min-width: 0; }
+main.container + .ch-footer .ch-foot-feedback-title,
+.ch-foot-feedback-title { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.2rem; }
+.ch-foot-feedback-title::before { display: none !important; }
+.ch-foot-feedback-text p { margin: 0; color: var(--ch-muted, #9aa6c0); font-size: 0.9rem; }
+.ch-foot-feedback-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+.ch-foot-feedback-actions .btn { display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap; }
+
+.ch-foot-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, 1fr));
+    gap: 2rem;
+    padding-bottom: 2.2rem;
+}
+.ch-foot-brand-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.35rem; color: #fff; }
+.ch-foot-brand .ch-brand-mark { width: 2.3rem; height: 2.3rem; font-size: 0.85rem; }
+.ch-foot-tagline { margin: 0.8rem 0 1.1rem; max-width: 22rem; color: var(--ch-muted, #9aa6c0); line-height: 1.5; }
+.ch-foot-icons { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+.ch-foot-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #c9d1e3;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--ch-border, #263152);
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+.ch-foot-icon:hover, .ch-foot-icon:focus-visible {
+    color: #fff;
+    background: var(--ch-accent, #d7263d);
+    border-color: var(--ch-accent, #d7263d);
+    transform: translateY(-2px);
+    text-decoration: none;
+}
+.ch-foot-col { display: flex; flex-direction: column; gap: 0.55rem; }
+.ch-foot-col h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 0.3rem;
+}
+.ch-foot-col-accent h3 { color: #ff6b7e; }
+.ch-foot-col a, .ch-foot-link-btn {
+    color: var(--ch-muted, #9aa6c0);
+    font-size: 0.9rem;
+    text-decoration: none;
+    text-align: left;
+    transition: color 0.15s ease;
+}
+.ch-foot-link-btn { background: none; border: 0; padding: 0; }
+.ch-foot-col a:hover, .ch-foot-link-btn:hover { color: #fff; text-decoration: none; }
+.ch-foot-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.6rem 1.5rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--ch-border, #263152);
+    font-size: 0.82rem;
+    color: var(--ch-muted, #9aa6c0);
+}
+.ch-foot-bottom-links { display: flex; gap: 1.2rem; }
+.ch-foot-bottom-links a { color: var(--ch-muted, #9aa6c0); text-decoration: none; }
+.ch-foot-bottom-links a:hover { color: #fff; }
+
+@media (max-width: 991.98px) {
+    .ch-foot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ch-foot-brand { grid-column: 1 / -1; }
+}
+@media (max-width: 767.98px) {
+    .ch-foot-feedback { flex-direction: column; align-items: flex-start; text-align: left; }
+    .ch-foot-feedback-actions { width: 100%; }
+    .ch-foot-feedback-actions .btn { flex: 1; justify-content: center; }
+    .ch-foot-grid { gap: 1.6rem 1rem; }
+}

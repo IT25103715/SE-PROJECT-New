@@ -1,0 +1,2439 @@
+/* =========================================================================
+   CinemaX Lanka / CinemaHub - site-wide visual theme (presentation only)
+
+   Dark cinematic theme with ONE accent colour (deep red). Every template sets
+   data-bs-theme="dark" on <html>, so Bootstrap's own dark palette does the
+   heavy lifting and this file only re-tints it and adds the CinemaHub pieces.
+
+   Button colour code (used on every page, customer and staff):
+     red solid      .btn-primary / .btn-ch-accent     main call to action
+     blue outline   .btn-outline-primary              Edit / View
+     green outline  .btn-outline-success              Approve / Activate / Reactivate
+     red outline    .btn-outline-danger               Deactivate / Reject / Delete
+     amber outline  .btn-outline-warning              Suspend / Expire (needs care)
+     grey outline   .btn-outline-secondary            Cancel / Back / neutral
+   ========================================================================= */
+
+:root {
+    --ch-bg: #0a0e1a;
+    --ch-bg-nav: #0d1222;
+    --ch-surface: #131a2d;
+    --ch-surface-2: #1a2340;
+    --ch-border: #263152;
+    --ch-text: #e9edf7;
+    --ch-muted: #9aa6c0;
+
+    --ch-accent: #d7263d;
+    --ch-accent-hover: #b81d32;
+    --ch-accent-soft: rgba(215, 38, 61, 0.14);
+
+    --ch-blue: #4d8dff;
+    --ch-green: #2ea86b;
+
+    --ch-radius: 0.85rem;
+    --ch-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- Bootstrap dark palette, re-tinted ---------- */
+
+[data-bs-theme="dark"] {
+    --bs-body-bg: var(--ch-bg);
+    --bs-body-bg-rgb: 10, 14, 26;
+    --bs-body-color: var(--ch-text);
+    --bs-body-color-rgb: 233, 237, 247;
+    --bs-secondary-color: var(--ch-muted);
+    --bs-secondary-bg: var(--ch-surface-2);
+    --bs-tertiary-bg: var(--ch-surface);
+    --bs-border-color: var(--ch-border);
+    --bs-emphasis-color: #fff;
+    --bs-heading-color: #fff;
+    --bs-link-color: #ff6b7e;
+    --bs-link-color-rgb: 255, 107, 126;
+    --bs-link-hover-color: #ff9aa8;
+    --bs-link-hover-color-rgb: 255, 154, 168;
+    --bs-primary: var(--ch-accent);
+    --bs-primary-rgb: 215, 38, 61;
+    --bs-success: var(--ch-green);
+    --bs-success-rgb: 46, 168, 107;
+    --bs-border-radius: 0.55rem;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: var(--ch-bg);
+    background-image: radial-gradient(1100px 500px at 50% -180px, rgba(215, 38, 61, 0.10), transparent 70%);
+    background-repeat: no-repeat;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--ch-text);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main.container {
+    flex: 1 0 auto;
+    min-height: 70vh;
+}
+
+h1, h2, h3, h4, h5 {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.1px;
+}
+
+/* Page titles: same red tick on every page so all dashboards read as one product */
+main.container h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+main.container h2::before {
+    content: "";
+    width: 5px;
+    height: 1.5rem;
+    border-radius: 3px;
+    background: var(--ch-accent);
+    flex-shrink: 0;
+}
+
+/* Centred screens (login, confirmation etc.) don't need the tick's left-align */
+main.container .text-center h2::before {
+    display: none;
+}
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.btn:hover,
+.dropdown-item:hover,
+.nav-link:hover,
+.navbar-brand:hover {
+    text-decoration: none;
+}
+
+code {
+    color: #ff9aa8;
+    background: var(--ch-accent-soft);
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.3rem;
+}
+
+hr {
+    border-color: var(--ch-border);
+    opacity: 1;
+}
+
+/* ---------- Navbar (all pages, every role) ---------- */
+
+.ch-navbar {
+    background: var(--ch-bg-nav);
+    border-bottom: 2px solid var(--ch-accent);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+}
+
+.ch-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: 'Poppins', sans-serif;
+}
+
+.ch-brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 0.5rem;
+    background: linear-gradient(135deg, var(--ch-accent), #ff5a6e);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+    box-shadow: 0 0 14px rgba(215, 38, 61, 0.45);
+}
+
+.ch-brand-text {
+    font-weight: 700;
+    font-size: 1.2rem;
+    letter-spacing: 0.3px;
+    color: #fff;
+}
+
+.ch-navbar .nav-link {
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.78);
+    padding: 0.55rem 0.9rem;
+    border-radius: 0.4rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ch-navbar .nav-link:hover,
+.ch-navbar .nav-link:focus,
+.ch-navbar .nav-link.show {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.07);
+}
+
+.ch-navbar .dropdown-toggle::after {
+    opacity: 0.7;
+}
+
+.ch-navbar .dropdown-menu {
+    --bs-dropdown-bg: var(--ch-surface-2);
+    --bs-dropdown-border-color: var(--ch-border);
+    --bs-dropdown-link-color: var(--ch-text);
+    --bs-dropdown-link-hover-bg: var(--ch-accent-soft);
+    --bs-dropdown-link-hover-color: #fff;
+    --bs-dropdown-link-active-bg: var(--ch-accent);
+    --bs-dropdown-divider-bg: var(--ch-border);
+    border-radius: 0.7rem;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+    padding: 0.4rem;
+    margin-top: 0.5rem;
+}
+
+.ch-navbar .dropdown-item {
+    border-radius: 0.4rem;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.92rem;
+}
+
+.ch-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    border-radius: 50%;
+    background-color: var(--ch-accent-soft);
+    border: 1px solid rgba(215, 38, 61, 0.5);
+    color: #fff;
+    font-size: 1rem;
+}
+
+/* ---------- Buttons (site-wide colour code - see header comment) ---------- */
+
+.btn {
+    border-radius: 0.55rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+                box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.btn-primary,
+.btn-ch-accent {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--ch-accent);
+    --bs-btn-border-color: var(--ch-accent);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--ch-accent-hover);
+    --bs-btn-hover-border-color: var(--ch-accent-hover);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #9c1729;
+    --bs-btn-active-border-color: #9c1729;
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: var(--ch-accent);
+    --bs-btn-disabled-border-color: var(--ch-accent);
+    --bs-btn-focus-shadow-rgb: 215, 38, 61;
+    font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-ch-accent:hover:not(:disabled) {
+    box-shadow: 0 4px 16px rgba(215, 38, 61, 0.4);
+}
+
+/* Blue = Edit / View */
+.btn-outline-primary {
+    --bs-btn-color: var(--ch-blue);
+    --bs-btn-border-color: var(--ch-blue);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #2f6fe0;
+    --bs-btn-hover-border-color: #2f6fe0;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #2559b8;
+    --bs-btn-active-border-color: #2559b8;
+    --bs-btn-focus-shadow-rgb: 77, 141, 255;
+}
+
+/* Green = Approve / Activate / Reactivate */
+.btn-outline-success {
+    --bs-btn-color: #3ccf88;
+    --bs-btn-border-color: var(--ch-green);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--ch-green);
+    --bs-btn-hover-border-color: var(--ch-green);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #23895a;
+    --bs-btn-active-border-color: #23895a;
+}
+
+.btn-success {
+    --bs-btn-bg: var(--ch-green);
+    --bs-btn-border-color: var(--ch-green);
+    --bs-btn-hover-bg: #23895a;
+    --bs-btn-hover-border-color: #23895a;
+}
+
+/* Red = Deactivate / Reject / Delete */
+.btn-outline-danger {
+    --bs-btn-color: #ff6b7e;
+    --bs-btn-border-color: #e5484d;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #e5484d;
+    --bs-btn-hover-border-color: #e5484d;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #c53a3f;
+    --bs-btn-active-border-color: #c53a3f;
+}
+
+/* Neutral = Cancel / Back */
+.btn-outline-secondary {
+    --bs-btn-color: var(--ch-muted);
+    --bs-btn-border-color: #3a4770;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #2a3558;
+    --bs-btn-hover-border-color: #4a5888;
+    --bs-btn-active-bg: #2a3558;
+    --bs-btn-active-border-color: #4a5888;
+}
+
+.btn-outline-light {
+    --bs-btn-color: var(--ch-text);
+    --bs-btn-border-color: #4a5888;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--ch-accent);
+    --bs-btn-hover-border-color: var(--ch-accent);
+    --bs-btn-active-bg: var(--ch-accent);
+    --bs-btn-active-border-color: var(--ch-accent);
+}
+
+.btn-check:checked + .btn-outline-light {
+    color: #fff;
+    background-color: var(--ch-accent);
+    border-color: var(--ch-accent);
+}
+
+/* Action cells are written as <td class="d-flex ...">; a flex <td> stops being a table
+   cell and breaks the row's height/border. Keep them real cells, and space the buttons. */
+.table td.d-flex {
+    display: table-cell !important;
+}
+
+.table td.d-flex > * {
+    margin: 0 0.25rem 0.3rem 0;
+    vertical-align: middle;
+}
+
+/* Small buttons that sit in table action cells */
+.table .btn-sm {
+    padding: 0.25rem 0.7rem;
+    font-size: 0.82rem;
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+    --bs-card-bg: var(--ch-surface);
+    --bs-card-border-color: var(--ch-border);
+    --bs-card-cap-bg: transparent;
+    --bs-card-color: var(--ch-text);
+    border: 1px solid var(--ch-border);
+    border-radius: var(--ch-radius);
+    box-shadow: var(--ch-shadow);
+}
+
+.card-footer {
+    background: transparent;
+    border-top: 1px solid var(--ch-border);
+}
+
+/* Cards holding a figure (dashboard stat tiles, revenue summaries) */
+.card .fs-4.fw-bold {
+    font-family: 'Poppins', sans-serif;
+    color: #fff;
+}
+
+.card h6.text-uppercase {
+    letter-spacing: 0.8px;
+    font-size: 0.72rem;
+}
+
+/* Some templates hard-code bg-white / bg-light for the old light look.
+   Point them at the dark surface instead (no markup change needed). */
+.bg-white {
+    background-color: var(--ch-surface) !important;
+    color: var(--ch-text);
+}
+
+.bg-light {
+    background-color: var(--ch-surface-2) !important;
+}
+
+/* ---------- Movie cards (customer pages) ---------- */
+
+.movie-card {
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.movie-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(215, 38, 61, 0.65);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(215, 38, 61, 0.25);
+}
+
+.movie-card img {
+    aspect-ratio: 2 / 3;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    background: var(--ch-surface-2);
+}
+
+.movie-card .card-title {
+    font-size: 1.05rem;
+}
+
+.ch-lang-badge {
+    background-color: var(--ch-surface-2);
+    color: #c7d0e6;
+    border: 1px solid var(--ch-border);
+    font-weight: 600;
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+}
+
+.ch-filter-bar {
+    background-color: var(--ch-surface);
+    border: 1px solid var(--ch-border);
+    border-radius: var(--ch-radius);
+    padding: 1rem 1rem 0.85rem;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* ---------- Tables (every dashboard/list view) ---------- */
+
+.table {
+    --bs-table-bg: var(--ch-surface);
+    --bs-table-color: var(--ch-text);
+    --bs-table-border-color: var(--ch-border);
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.025);
+    --bs-table-striped-color: var(--ch-text);
+    --bs-table-hover-bg: rgba(215, 38, 61, 0.09);
+    --bs-table-hover-color: #fff;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--ch-border);
+    border-radius: var(--ch-radius);
+    overflow: hidden;
+    box-shadow: var(--ch-shadow);
+}
+
+/* Row hover on every table, not only ones that opt in with .table-hover */
+.table > tbody > tr:hover > * {
+    --bs-table-bg-state: var(--bs-table-hover-bg);
+    color: var(--bs-table-hover-color);
+}
+
+.table thead th {
+    background-color: var(--ch-surface-2);
+    color: #c7d0e6;
+    border-bottom: 1px solid var(--ch-border);
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+}
+
+.table td,
+.table th {
+    padding: 0.8rem 0.9rem;
+}
+
+.table tbody tr:last-child > * {
+    border-bottom: none;
+}
+
+/* ---------- Badges & alerts ---------- */
+
+.badge {
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    border-radius: 999px;
+    padding: 0.4em 0.75em;
+}
+
+.alert {
+    border-radius: 0.7rem;
+    border-width: 0 0 0 4px;
+    box-shadow: var(--ch-shadow);
+}
+
+/* ---------- Forms ---------- */
+
+.form-label {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #c7d0e6;
+    margin-bottom: 0.35rem;
+}
+
+.form-control,
+.form-select {
+    background-color: var(--ch-surface-2);
+    border: 1px solid var(--ch-border);
+    color: var(--ch-text);
+    border-radius: 0.6rem;
+    padding: 0.55rem 0.8rem;
+}
+
+.form-control-sm,
+.form-select-sm {
+    padding: 0.3rem 0.6rem;
+}
+
+.form-control::placeholder {
+    color: #66739a;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: var(--ch-surface-2);
+    color: #fff;
+    border-color: var(--ch-accent);
+    box-shadow: 0 0 0 0.2rem rgba(215, 38, 61, 0.22);
+}
+
+.form-control:disabled,
+.form-control[readonly] {
+    background-color: var(--ch-surface);
+    color: var(--ch-muted);
+}
+
+.form-check-input:checked {
+    background-color: var(--ch-accent);
+    border-color: var(--ch-accent);
+}
+
+.form-text {
+    color: var(--ch-muted);
+}
+
+/* Server-side validation messages (th:errors): a clear callout under the field */
+div.text-danger.small {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.4rem;
+    padding: 0.35rem 0.65rem;
+    background: rgba(229, 72, 77, 0.12);
+    border-left: 3px solid #e5484d;
+    border-radius: 0.4rem;
+    color: #ff8a94 !important;
+    font-size: 0.82rem;
+}
+
+div.text-danger.small::before {
+    content: "\26A0";
+    font-size: 0.9rem;
+}
+
+/* ...and outline the offending input itself */
+.mb-3:has(> div.text-danger.small) > .form-control,
+.mb-3:has(> div.text-danger.small) > .form-select {
+    border-color: #e5484d;
+}
+
+/* Client-side (Bootstrap) validation feedback used on the checkout screens */
+.invalid-feedback {
+    color: #ff8a94;
+}
+
+/* ---------- Misc Bootstrap components ---------- */
+
+.list-group {
+    --bs-list-group-bg: var(--ch-surface);
+    --bs-list-group-border-color: var(--ch-border);
+    --bs-list-group-color: var(--ch-text);
+    border-radius: var(--ch-radius);
+    overflow: hidden;
+    box-shadow: var(--ch-shadow);
+}
+
+.list-group-item {
+    padding: 0.95rem 1.1rem;
+    transition: background-color 0.15s ease;
+}
+
+.list-group-item:hover {
+    background-color: var(--ch-surface-2);
+}
+
+.modal-content {
+    background-color: var(--ch-surface);
+    border: 1px solid var(--ch-border);
+    border-radius: var(--ch-radius);
+}
+
+.modal-header {
+    border-bottom-color: var(--ch-border);
+}
+
+/* QR codes need a light quiet-zone to stay scannable on a dark page */
+img[alt="QR ticket"] {
+    background: #fff;
+    padding: 10px;
+    border-radius: 0.6rem;
+}
+
+/* ---------- Hero carousel (home page) ---------- */
+
+.ch-hero-carousel {
+    border-radius: 1.1rem;
+    overflow: hidden;
+    border: 1px solid var(--ch-border);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+    background: var(--ch-surface);
+}
+
+.ch-hero-slide {
+    position: relative;
+    min-height: 420px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* Blurred, darkened copy of the poster as a cinematic backdrop */
+.ch-hero-bg {
+    position: absolute;
+    inset: -30px;
+    width: calc(100% + 60px);
+    height: calc(100% + 60px);
+    object-fit: cover;
+    filter: blur(28px) brightness(0.45) saturate(1.2);
+    transform: scale(1.05);
+}
+
+.ch-hero-slide::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(10, 14, 26, 0.92) 0%, rgba(10, 14, 26, 0.55) 55%, rgba(10, 14, 26, 0.2) 100%);
+}
+
+.ch-hero-content {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    padding: 2.5rem 3.5rem;
+}
+
+.ch-hero-poster {
+    width: 100%;
+    max-width: 250px;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    border-radius: 0.9rem;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.ch-hero-kicker {
+    display: inline-block;
+    letter-spacing: 2px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #ff8a94;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+}
+
+.ch-hero-title {
+    font-size: clamp(1.9rem, 4.2vw, 3.1rem);
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.6rem;
+}
+
+.ch-hero-desc {
+    color: #c7d0e6;
+    max-width: 44rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Arrows and dots must sit ABOVE the slide content (.ch-hero-content is z-index 2), otherwise the
+   content covers them and every click lands on the slide instead of the control. */
+.ch-hero-carousel .carousel-indicators {
+    z-index: 5;
+    margin-bottom: 0.7rem;
+}
+
+/* Keep Bootstrap's transparent top/bottom border on the dots: it is what gives them a
+   comfortable ~28px-tall click target around the 4px-tall visible bar. */
+.ch-hero-carousel .carousel-indicators [data-bs-target] {
+    width: 30px;
+    height: 4px;
+    background-color: #fff;
+}
+
+/* Arrow zones are exactly as wide as the content's side padding (3.5rem), so they never
+   overlap the "View & Book" button or the poster. */
+.ch-hero-carousel .carousel-control-prev,
+.ch-hero-carousel .carousel-control-next {
+    width: 3.5rem;
+    z-index: 5;
+    opacity: 1;
+}
+
+/* Bootstrap's dark theme inverts these icons to black, which vanishes on our dark hero -
+   show them as visible round buttons instead. */
+html[data-bs-theme="dark"] .ch-hero-carousel .carousel-control-prev-icon,
+html[data-bs-theme="dark"] .ch-hero-carousel .carousel-control-next-icon {
+    filter: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    background-size: 42%;
+    background-color: rgba(10, 14, 26, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.ch-hero-carousel .carousel-control-prev:hover .carousel-control-prev-icon,
+.ch-hero-carousel .carousel-control-next:hover .carousel-control-next-icon {
+    background-color: var(--ch-accent);
+    transform: scale(1.08);
+}
+
+/* Brand banner shown when there are no movies to feature yet */
+.ch-hero {
+    background: linear-gradient(120deg, var(--ch-bg-nav) 0%, #4a0f1c 100%);
+    border: 1px solid var(--ch-border);
+    border-radius: 1.1rem;
+}
+
+/* Section headings on customer pages ("Now Showing") */
+.ch-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.2rem;
+}
+
+/* ---------- Movie detail hero ---------- */
+
+.ch-detail-hero {
+    position: relative;
+    border-radius: 1.1rem;
+    overflow: hidden;
+    border: 1px solid var(--ch-border);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+    padding: 2rem;
+    background: var(--ch-surface);
+}
+
+.ch-detail-hero > .row {
+    position: relative;
+    z-index: 2;
+}
+
+.ch-detail-hero .ch-hero-bg {
+    filter: blur(34px) brightness(0.35) saturate(1.2);
+}
+
+.ch-detail-hero img.img-fluid {
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* ---------- Auth screens (login / register) ---------- */
+
+.ch-auth-card {
+    background: var(--ch-surface);
+    border: 1px solid var(--ch-border);
+    border-top: 3px solid var(--ch-accent);
+    border-radius: var(--ch-radius);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+    padding: 2rem;
+}
+
+/* ---------- Seat map: theater layout ---------- */
+
+#seatMapContainer {
+    text-align: center;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+}
+
+/* Curved screen at the front of the hall */
+.ch-screen {
+    max-width: 560px;
+    height: 44px;
+    margin: 0.5rem auto 1.75rem;
+    border-top: 4px solid rgba(255, 255, 255, 0.85);
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    background: linear-gradient(180deg, rgba(215, 38, 61, 0.30), rgba(215, 38, 61, 0) 85%);
+    box-shadow: 0 -10px 34px rgba(215, 38, 61, 0.35);
+}
+
+.ch-screen span {
+    display: inline-block;
+    margin-top: 0.7rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.55em;
+    color: var(--ch-muted);
+}
+
+.seat-map {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+}
+
+.seat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.seat-row-seats {
+    display: flex;
+    gap: 8px;
+}
+
+.seat-row-label {
+    width: 1.4rem;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ch-muted);
+    user-select: none;
+}
+
+/* Available: light-grey outline */
+.seat {
+    width: 38px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #aab4ca;
+    border-radius: 8px 8px 4px 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #dde3f0;
+    cursor: pointer;
+    user-select: none;
+    background-color: rgba(170, 180, 202, 0.06);
+    transition: transform 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.seat:not(.booked):hover {
+    border-color: var(--ch-accent);
+    transform: translateY(-2px);
+}
+
+/* Centre walking aisle - a gap only, so the row's seats stay direct siblings */
+.seat.aisle-before {
+    margin-left: 26px;
+}
+
+/* Selected: site accent, filled */
+.seat.selected {
+    background-color: var(--ch-accent);
+    border-color: var(--ch-accent);
+    color: #fff;
+    box-shadow: 0 0 12px rgba(215, 38, 61, 0.55);
+}
+
+/* Booked: dark grey, dimmed, not clickable */
+.seat.booked {
+    background-color: #2b3148;
+    border-color: #2b3148;
+    color: #6f7894;
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* Legend - its own swatch class (not .seat) so scripts never mistake it for a real seat */
+.seat-legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    font-size: 0.875rem;
+    color: var(--ch-muted);
+}
+
+.seat-legend > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.seat-swatch {
+    display: inline-block;
+    width: 18px;
+    height: 17px;
+    border: 1.5px solid #aab4ca;
+    border-radius: 5px 5px 3px 3px;
+    background-color: rgba(170, 180, 202, 0.06);
+}
+
+.seat-swatch.selected {
+    background-color: var(--ch-accent);
+    border-color: var(--ch-accent);
+}
+
+.seat-swatch.booked {
+    background-color: #2b3148;
+    border-color: #2b3148;
+    opacity: 0.55;
+}
+
+/* ---------- Booking page: movie header + showtime picker ---------- */
+
+.ch-booking-movie {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.ch-booking-poster {
+    width: 110px;
+    flex: 0 0 auto;
+    border-radius: 0.6rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+}
+
+.ch-booking-desc {
+    max-width: 48rem;
+    color: #c7d0e6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.ch-showtime-picker {
+    background: var(--ch-surface);
+    border: 1px solid var(--ch-border);
+    border-radius: var(--ch-radius);
+    padding: 1.25rem 1.25rem 0.5rem;
+    margin-bottom: 1.75rem;
+}
+
+.ch-detail-hero .ch-showtime-picker {
+    margin: 1.5rem 0 0;
+    background: rgba(19, 26, 45, 0.75);
+}
+
+.ch-showtime-picker-title {
+    margin-bottom: 1rem;
+}
+
+.ch-showtime-days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1.75rem;
+}
+
+.ch-showtime-day {
+    margin-bottom: 1rem;
+}
+
+.ch-showtime-date {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ch-muted);
+    margin-bottom: 0.5rem;
+}
+
+.ch-showtime-slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.ch-showtime-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 7.5rem;
+    padding: 0.55rem 0.9rem;
+    border: 1.5px solid var(--ch-border);
+    border-radius: 0.6rem;
+    background: var(--ch-surface-2);
+    color: var(--ch-text);
+    text-decoration: none;
+    transition: border-color 0.12s ease, transform 0.12s ease;
+}
+
+.ch-showtime-slot:hover,
+.ch-showtime-slot:focus-visible {
+    border-color: var(--ch-accent);
+    color: var(--ch-text);
+    transform: translateY(-2px);
+}
+
+.ch-showtime-slot.active {
+    border-color: var(--ch-accent);
+    background: var(--ch-accent-soft);
+    box-shadow: 0 0 0 1px var(--ch-accent) inset;
+}
+
+.ch-showtime-time {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.ch-showtime-meta {
+    font-size: 0.75rem;
+    color: var(--ch-muted);
+}
+
+.ch-seat-heading {
+    margin-bottom: 1rem;
+    scroll-margin-top: 5.5rem;
+}
+
+/* ---------- Payment details (mock card screen) ---------- */
+
+.ch-payment-panel {
+    background: var(--ch-surface);
+    border: 1px solid var(--ch-border);
+    border-top: 3px solid var(--ch-accent);
+    color: #fff;
+    border-radius: var(--ch-radius);
+    padding: 2rem;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+}
+
+.ch-payment-panel .form-label {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.ch-card-type-option {
+    font-weight: 600;
+    letter-spacing: 0.4px;
+}
+
+.ch-order-summary {
+    position: sticky;
+    top: 5rem;
+}
+
+/* Compact seat grid for the seat-edit panel on the checkout summary -
+   same .seat/.seat-row classes as the main seat map, just smaller so a full
+   hall row fits the narrower right-hand column. */
+.seat-map-compact {
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+.seat-map-compact .seat {
+    width: 28px;
+    height: 27px;
+    font-size: 0.65rem;
+}
+
+.seat-map-compact .seat-row-seats {
+    gap: 6px;
+}
+
+.seat-map-compact .seat.aisle-before {
+    margin-left: 16px;
+}
+
+.seat-map-compact .seat-row-label {
+    width: 1rem;
+    font-size: 0.7rem;
+}
+
+#seatEditPanel .ch-screen {
+    max-width: 320px;
+    height: 30px;
+    margin-bottom: 1rem;
+}
+
+#seatEditPanel .ch-screen span {
+    margin-top: 0.45rem;
+    font-size: 0.62rem;
+}
+
+.seat-stepper-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    line-height: 1;
+}
+
+.ch-edit-icon-btn {
+    background: none;
+    border: none;
+    padding: 0 0.25rem;
+    font-size: 0.85rem;
+    color: inherit;
+    cursor: pointer;
+}
+
+.ch-pay-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(6, 9, 18, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+/* ---------- Footer ---------- */
+
+.ch-footer {
+    flex-shrink: 0;
+    margin-top: 3rem;
+    padding: 2rem 0 1.5rem;
+    background-color: var(--ch-bg-nav);
+    border-top: 1px solid var(--ch-border);
+    color: var(--ch-muted);
+    font-size: 0.875rem;
+}
+
+.ch-footer .ch-brand-mark {
+    width: 1.7rem;
+    height: 1.7rem;
+    font-size: 0.72rem;
+    box-shadow: none;
+}
+
+.ch-footer-title {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    color: #fff;
+}
+
+/* ---------- Small screens ---------- */
+
+@media (max-width: 767.98px) {
+    .ch-hero-content {
+        padding: 1.75rem 1.5rem;
+    }
+
+    .ch-hero-slide {
+        min-height: 360px;
+    }
+
+    .ch-hero-carousel .carousel-control-prev,
+    .ch-hero-carousel .carousel-control-next {
+        display: none;
+    }
+
+    .ch-order-summary {
+        position: static;
+    }
+}
+
+/* ---------- Home: Now Showing / Coming Soon / Promotions tabs ---------- */
+
+.ch-tabbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--ch-border);
+    margin-bottom: 1.5rem;
+}
+
+.ch-tabs {
+    display: flex;
+    gap: 2rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.ch-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.ch-tab {
+    background: none;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+    padding: 0.6rem 0 0.85rem;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: #6f7b99;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.ch-tab:hover {
+    color: #c7d0e6;
+}
+
+.ch-tab.active {
+    color: #fff;
+    font-weight: 700;
+    border-bottom-color: var(--ch-accent);
+}
+
+.ch-tab:focus-visible,
+.ch-arrow:focus-visible,
+.ch-outline-btn:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+.ch-viewall {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding-bottom: 0.85rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.4px;
+    color: #ff6b7e;
+    white-space: nowrap;
+}
+
+.ch-viewall:hover {
+    color: #ff9aa8;
+    text-decoration: none;
+}
+
+.ch-viewall svg {
+    transition: transform 0.15s ease;
+}
+
+.ch-viewall:hover svg {
+    transform: translateX(3px);
+}
+
+/* Scrolling row + its arrow buttons */
+.ch-carousel {
+    position: relative;
+}
+
+.ch-row {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    padding: 0.4rem 0.2rem 0.8rem;
+}
+
+.ch-row::-webkit-scrollbar {
+    display: none;
+}
+
+.ch-row.d-none {
+    display: none !important;
+}
+
+.ch-empty {
+    color: var(--ch-muted);
+    margin: 1.5rem 0.5rem;
+}
+
+.ch-arrow {
+    position: absolute;
+    top: calc(50% - 1.4rem);
+    z-index: 5;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    border: 0;
+    background: #fff;
+    color: #0a0e1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.ch-arrow:hover {
+    background: #ffe3e7;
+    transform: scale(1.08);
+}
+
+.ch-arrow.d-none {
+    display: none !important;
+}
+
+.ch-arrow-left {
+    left: -1.2rem;
+}
+
+.ch-arrow-right {
+    right: -1.2rem;
+}
+
+/* Poster card: full-bleed poster, fade at the bottom, hover overlay with actions */
+.ch-poster-card {
+    position: relative;
+    flex: 0 0 auto;
+    width: 220px;
+    aspect-ratio: 2 / 3;
+    border-radius: 0.8rem;
+    overflow: hidden;
+    background: var(--ch-surface-2);
+    border: 1px solid var(--ch-border);
+    scroll-snap-align: start;
+    box-shadow: var(--ch-shadow);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ch-poster-card:hover,
+.ch-poster-card:focus-within,
+.ch-poster-card.is-open {
+    transform: translateY(-5px);
+    border-color: rgba(215, 38, 61, 0.65);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.55);
+}
+
+.ch-poster-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ch-poster-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: var(--ch-muted);
+}
+
+/* Subtle fade so the title stays readable on any poster without hiding it */
+.ch-poster-info {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 3.2rem 0.9rem 0.85rem;
+    background: linear-gradient(to top, rgba(6, 9, 18, 0.92) 0%, rgba(6, 9, 18, 0.6) 55%, transparent 100%);
+    pointer-events: none;
+}
+
+.ch-poster-title {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: #fff;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.ch-poster-tag {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #a9b4cf;
+}
+
+.ch-poster-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    background: rgba(6, 9, 18, 0.72);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.ch-poster-card:hover .ch-poster-overlay,
+.ch-poster-card:focus-within .ch-poster-overlay,
+.ch-poster-card.is-open .ch-poster-overlay {
+    opacity: 1;
+    visibility: visible;
+}
+
+.ch-outline-btn {
+    min-width: 8.5rem;
+    padding: 0.5rem 1rem;
+    border: 1.5px solid #fff;
+    border-radius: 0.5rem;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-align: center;
+    text-transform: uppercase;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.ch-outline-btn:hover {
+    background: var(--ch-accent);
+    border-color: var(--ch-accent);
+    color: #fff;
+    text-decoration: none;
+}
+
+/* Promotion cards share the poster-card frame, with a branded face instead of a poster */
+.ch-promo-card {
+    background: linear-gradient(160deg, #3a0f1a 0%, #1a2340 65%, #131a2d 100%);
+    container-type: inline-size;
+}
+
+.ch-promo-body {
+    position: absolute;
+    inset: 0 0 5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1rem;
+}
+
+.ch-promo-kicker {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #ff8a94;
+}
+
+.ch-promo-value {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2.6rem;
+    font-size: min(2.6rem, 17cqw); /* scales with the card so "Rs. 1500" never wraps */
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: nowrap;
+    color: #fff;
+    margin-top: 0.3rem;
+}
+
+.ch-promo-off {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #c7d0e6;
+    margin-bottom: 0.9rem;
+}
+
+.ch-promo-code {
+    font-size: 0.95rem;
+    letter-spacing: 1.5px;
+    padding: 0.35rem 0.8rem;
+    border: 1px dashed rgba(255, 138, 148, 0.7);
+}
+
+@media (max-width: 767.98px) {
+    .ch-poster-card {
+        width: 165px;
+    }
+
+    .ch-arrow-left {
+        left: -0.4rem;
+    }
+
+    .ch-arrow-right {
+        right: -0.4rem;
+    }
+
+    .ch-tabs {
+        gap: 1rem;
+    }
+
+    .ch-tab {
+        font-size: 0.78rem;
+        letter-spacing: 0.4px;
+    }
+
+    .ch-viewall {
+        font-size: 0.8rem;
+    }
+}
+
+/* ---------- Ticket scanning (staff): Scan / Enter Manually ---------- */
+
+.ch-scan-tabs {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: var(--ch-surface);
+    border: 1px solid var(--ch-border);
+    border-radius: 0.75rem;
+}
+
+.ch-scan-tab {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    border: 0;
+    border-radius: 0.55rem;
+    background: transparent;
+    color: var(--ch-muted);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ch-scan-tab:hover {
+    color: #fff;
+}
+
+.ch-scan-tab.active {
+    background: var(--ch-accent);
+    color: #fff;
+}
+
+.ch-scan-tab:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+.ch-scan-idle {
+    padding: 2rem 1.25rem;
+    background: var(--ch-surface);
+    border: 1px dashed var(--ch-border);
+    border-radius: var(--ch-radius);
+}
+
+/* Live camera preview */
+.ch-scan-box {
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+    overflow: hidden;
+    background: #000;
+    border: 2px solid var(--ch-accent);
+    border-radius: var(--ch-radius);
+    box-shadow: 0 0 24px rgba(215, 38, 61, 0.35);
+}
+
+.ch-scan-box video {
+    display: block;
+    width: 100% !important;
+    height: auto !important;
+}
+
+/* ---------- Image CAPTCHA (fragments/human-check.html) ---------- */
+.ch-captcha {
+    max-width: 22rem;
+    padding: 0.75rem 1rem;
+    background: var(--ch-surface-2);
+    border: 1px solid var(--ch-border);
+    border-radius: 0.5rem;
+}
+.ch-captcha.is-invalid {
+    border-color: var(--bs-form-invalid-border-color, #dc3545);
+}
+.ch-captcha-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+.ch-captcha-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.6rem;
+}
+.ch-captcha-img {
+    display: block;
+    width: 180px;
+    height: 60px;
+    border-radius: 0.35rem;
+    border: 1px solid var(--ch-border);
+    user-select: none;
+    -webkit-user-drag: none;
+}
+.ch-captcha-refresh {
+    white-space: nowrap;
+}
+.ch-captcha-input {
+    max-width: 11rem;
+    font-family: monospace;
+    font-size: 1.1rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+}
+.ch-human-check-error {
+    margin-top: 0.3rem;
+    color: var(--bs-form-invalid-color, #ea868f);
+    font-size: 0.875em;
+}
+
+/* ---------- Homepage: Offers & Promotions section (bottom of the page) ---------- */
+
+.ch-offers-section {
+    margin-top: 3.5rem;
+}
+
+/* The section title reuses the active-tab look, but it is a plain heading. */
+.ch-section-heading {
+    margin: 0;
+    cursor: default;
+    line-height: 1.2;
+}
+
+/* ---------- Login: split screen (illustration + form) ---------- */
+
+.ch-auth-split {
+    display: flex;
+    max-width: 980px;
+    min-height: 520px;
+    margin: 0 auto;
+    background: var(--ch-surface);
+    border: 1px solid var(--ch-border);
+    border-top: 3px solid var(--ch-accent);
+    border-radius: var(--ch-radius);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+.ch-auth-visual {
+    position: relative;
+    flex: 1 1 55%;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 2.5rem;
+    background:
+        radial-gradient(circle at 25% 20%, rgba(215, 38, 61, 0.35), transparent 55%),
+        linear-gradient(160deg, #3a0f1a 0%, #1a2340 60%, #0d1222 100%);
+    border-right: 1px solid var(--ch-border);
+    overflow: hidden;
+}
+
+.ch-auth-visual-glow {
+    position: absolute;
+    inset: auto -20% -40% -20%;
+    height: 60%;
+    background: radial-gradient(ellipse at center, rgba(77, 141, 255, 0.18), transparent 70%);
+    pointer-events: none;
+}
+
+.ch-auth-art {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    height: auto;
+    align-self: center;
+    filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.55));
+}
+
+.ch-auth-visual-text {
+    position: relative;
+    color: #c7d0e6;
+}
+
+.ch-auth-visual-title {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 1.9rem;
+    color: #fff;
+    margin: 0.35rem 0 0.5rem;
+}
+
+.ch-auth-form {
+    flex: 1 1 45%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 2.5rem;
+    min-width: 0;
+}
+
+/* Narrow screens: the illustration is hidden (d-none d-lg-flex), the form fills the card. */
+@media (max-width: 991.98px) {
+    .ch-auth-split {
+        max-width: 480px;
+        min-height: 0;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .ch-auth-form {
+        padding: 1.75rem 1.25rem;
+    }
+}
+
+/* ---------- Food & Drinks menu: item photo cards ---------- */
+
+.ch-food-card {
+    overflow: hidden;
+    border-radius: var(--ch-radius);
+    background: var(--ch-surface);
+    border: 1px solid var(--ch-border);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.ch-food-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--ch-shadow);
+}
+
+.ch-food-img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    background: var(--ch-surface-2);
+}
+
+.ch-food-img-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+}
+
+/* ---------- Seat map pay step: "Snacks & extras" add-on picker ---------- */
+
+/* On the pay step the summary, the snacks and the Pay buttons share ONE column, so a sticky
+   .ch-order-summary just slid over the cards below it (snack photos showed through it, the
+   timer covered the last rows). Static here; it stays sticky on the card-details screen. */
+#step2 .ch-order-summary {
+    position: static;
+}
+
+.ch-addons-total {
+    flex-shrink: 0;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: var(--ch-accent-soft);
+    color: #ff8a98;
+    font-weight: 700;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.ch-addon-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.75rem 0 0;
+}
+
+.ch-addon-chip {
+    border: 1px solid var(--ch-border);
+    background: transparent;
+    color: var(--ch-muted);
+    border-radius: 999px;
+    padding: 0.25rem 0.8rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.ch-addon-chip:hover {
+    color: var(--ch-text);
+    border-color: var(--ch-muted);
+}
+
+.ch-addon-chip.active {
+    background: var(--ch-accent);
+    border-color: var(--ch-accent);
+    color: #fff;
+}
+
+/* One compact row per item: photo | name + price | Add / stepper. */
+.ch-addon-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.ch-addon-tile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 0.7rem;
+    background: var(--ch-surface-2);
+    border: 1px solid var(--ch-border);
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.ch-addon-tile.is-added {
+    border-color: var(--ch-accent);
+    box-shadow: 0 0 0 1px var(--ch-accent) inset;
+}
+
+.ch-addon-photo {
+    position: relative;
+    flex: 0 0 64px;
+    width: 64px;
+    height: 64px;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    background: var(--ch-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+}
+
+.ch-addon-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ch-addon-badge {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0.05rem 0;
+    background: var(--ch-accent);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.ch-addon-body {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.ch-addon-info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.ch-addon-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    line-height: 1.25;
+}
+
+.ch-addon-sub {
+    color: var(--ch-muted);
+    font-size: 0.75rem;
+    margin-top: 0.1rem;
+}
+
+.ch-addon-price {
+    display: block;
+    margin-top: 0.2rem;
+    font-weight: 700;
+    font-size: 0.88rem;
+}
+
+.ch-addon-was {
+    color: var(--ch-muted);
+    font-weight: 400;
+    font-size: 0.75rem;
+    margin-left: 0.3rem;
+}
+
+.ch-addon-save {
+    display: inline-block;
+    margin-left: 0.3rem;
+    padding: 0 0.35rem;
+    border-radius: 0.3rem;
+    background: rgba(46, 168, 107, 0.18);
+    color: #5fd39a;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.ch-addon-action {
+    flex: 0 0 auto;
+}
+
+.ch-addon-add {
+    border: 1px solid var(--ch-accent);
+    background: transparent;
+    color: #ff8a98;
+    border-radius: 999px;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background-color .15s ease, color .15s ease;
+}
+
+.ch-addon-add:hover {
+    background: var(--ch-accent);
+    color: #fff;
+}
+
+/* Stepper replaces "+ Add" once the item is in the order. */
+.ch-addon-stepper {
+    display: none;
+    align-items: center;
+    gap: 0.15rem;
+    border-radius: 999px;
+    background: var(--ch-accent);
+    padding: 0.1rem;
+}
+
+.ch-addon-tile.is-added .ch-addon-add {
+    display: none;
+}
+
+.ch-addon-tile.is-added .ch-addon-stepper {
+    display: inline-flex;
+}
+
+.ch-addon-stepper button {
+    width: 1.8rem;
+    height: 1.8rem;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #fff;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.ch-addon-stepper button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.ch-addon-stepper button:disabled {
+    opacity: 0.4;
+}
+
+.ch-addon-stepper strong {
+    min-width: 1.3rem;
+    text-align: center;
+    color: #fff;
+    font-size: 0.85rem;
+}
+
+.ch-addon-add:focus-visible,
+.ch-addon-chip:focus-visible,
+.ch-addon-stepper button:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+.ch-parking-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0.85rem 0 0;
+    padding: 0.7rem 0.85rem;
+    border-radius: 0.7rem;
+    background: var(--ch-surface-2);
+    border: 1px solid var(--ch-border);
+    cursor: pointer;
+    transition: border-color .15s ease;
+}
+
+.ch-parking-card.is-added {
+    border-color: var(--ch-accent);
+    box-shadow: 0 0 0 1px var(--ch-accent) inset;
+}
+
+.ch-parking-card.is-full {
+    cursor: default;
+    opacity: 0.7;
+}
+
+.ch-parking-icon {
+    font-size: 1.5rem;
+}
+
+.ch-parking-card .form-switch .form-check-input {
+    width: 2.6em;
+    height: 1.4em;
+    cursor: pointer;
+}
+
+/* ---------- Login page (auth/login.html): cinematic split + glass sign-in card ----------
+   The register page still uses the older .ch-auth-* styles above. */
+
+.ch-login {
+    position: relative;
+    padding: 2.5rem 1rem 3.5rem;
+    background:
+        radial-gradient(ellipse 60% 50% at 20% 10%, rgba(215, 38, 61, 0.16), transparent 70%),
+        radial-gradient(ellipse 50% 45% at 85% 90%, rgba(77, 141, 255, 0.10), transparent 70%),
+        linear-gradient(180deg, #0b0e14 0%, #121620 100%);
+}
+
+.ch-login-shell {
+    display: flex;
+    max-width: 1040px;
+    min-height: 580px;
+    margin: 0 auto;
+    border-radius: 1.25rem;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Left: poster collage + headline */
+.ch-login-visual {
+    position: relative;
+    flex: 1 1 54%;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 2.5rem;
+    overflow: hidden;
+    background: linear-gradient(160deg, #2a0b14 0%, #131a2d 65%, #0b0e14 100%);
+}
+
+.ch-login-posters {
+    position: absolute;
+    inset: -12% -18% auto -10%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.9rem;
+    transform: rotate(-9deg);
+    opacity: 0.55;
+}
+
+.ch-login-posters img {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    border-radius: 0.6rem;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.6);
+    animation: chPosterFloat 9s ease-in-out infinite;
+}
+
+.ch-login-posters img:nth-child(even) {
+    margin-top: 2.5rem;
+}
+
+@keyframes chPosterFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+}
+
+/* Fades the collage into the background so the text on top stays readable. */
+.ch-login-shade {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(11, 14, 20, 0.15) 0%, rgba(11, 14, 20, 0.75) 45%, #0b0e14 88%),
+        radial-gradient(ellipse at 15% 100%, rgba(215, 38, 61, 0.28), transparent 60%);
+}
+
+.ch-login-visual-content {
+    position: relative;
+    color: #94a3b8;
+}
+
+.ch-login-headline {
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.7rem, 2.6vw, 2.35rem);
+    line-height: 1.15;
+    color: #f8fafc;
+    margin: 0.5rem 0 0.6rem;
+    max-width: 16ch;
+}
+
+.ch-login-lead {
+    margin-bottom: 1.25rem;
+    max-width: 38ch;
+}
+
+.ch-login-pills {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.ch-login-pills li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    backdrop-filter: blur(8px);
+}
+
+.ch-login-pills svg,
+.ch-input-icon,
+.ch-input-toggle svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+
+.ch-login-pills svg {
+    color: #ff6b7e;
+}
+
+.ch-login-proof {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.6rem 1rem 0.6rem 0.6rem;
+    border-radius: 0.9rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+    text-decoration: none;
+    transition: border-color .15s ease, background-color .15s ease;
+}
+
+.ch-login-proof:hover {
+    color: #f8fafc;
+    border-color: rgba(255, 46, 77, 0.6);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.ch-login-proof .small {
+    color: #ff8a98;
+}
+
+.ch-login-proof-stack {
+    display: flex;
+}
+
+.ch-login-proof-stack img {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #0b0e14;
+}
+
+.ch-login-proof-stack img + img {
+    margin-left: -10px;
+}
+
+/* Right: glass card */
+.ch-login-panel {
+    flex: 1 1 46%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem;
+    min-width: 0;
+}
+
+.ch-login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 2.25rem 2rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.ch-login-title {
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-size: 1.75rem;
+    color: #f8fafc;
+    margin-bottom: 0.35rem;
+}
+
+.ch-login-sub {
+    color: #94a3b8;
+    margin-bottom: 1.75rem;
+}
+
+.ch-login-alert {
+    font-size: 0.9rem;
+    padding: 0.65rem 0.85rem;
+}
+
+.ch-login-card .form-label {
+    color: #cbd5e1;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+/* Input with a leading icon (and an optional trailing show/hide button). */
+.ch-input {
+    position: relative;
+}
+
+.ch-input .ch-input-icon {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    pointer-events: none;
+    transition: color .15s ease;
+}
+
+.ch-input .form-control {
+    height: 3rem;
+    padding-left: 2.7rem;
+    background: #161d2c;
+    border: 1px solid #2a344a;
+    color: #f8fafc;
+    border-radius: 0.65rem;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.ch-input .form-control::placeholder {
+    color: #64748b;
+}
+
+.ch-input .form-control:hover {
+    border-color: #3b4763;
+}
+
+.ch-input .form-control:focus {
+    background: #161d2c;
+    border-color: #ff2e4d;
+    box-shadow: 0 0 0 0.25rem rgba(255, 46, 77, 0.25);
+    color: #f8fafc;
+}
+
+.ch-input:focus-within .ch-input-icon {
+    color: #ff6b7e;
+}
+
+.ch-input .form-control.is-invalid {
+    border-color: #f87171;
+    background-image: none;
+}
+
+.ch-input .form-control.is-invalid:focus {
+    box-shadow: 0 0 0 0.25rem rgba(248, 113, 113, 0.25);
+}
+
+.ch-input #password {
+    padding-right: 3rem;
+}
+
+.ch-input-toggle {
+    position: absolute;
+    right: 0.35rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2.4rem;
+    height: 2.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: #94a3b8;
+}
+
+.ch-input-toggle:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.ch-input-toggle:focus-visible {
+    outline: 2px solid #ff2e4d;
+    outline-offset: 1px;
+}
+
+.ch-input-toggle .ch-eye-closed,
+.ch-input-toggle.is-visible .ch-eye-open {
+    display: none;
+}
+
+.ch-input-toggle.is-visible .ch-eye-closed {
+    display: block;
+}
+
+.ch-field-error {
+    margin-top: 0.35rem;
+    color: #fca5a5;
+    font-size: 0.82rem;
+}
+
+.ch-field-error:empty {
+    margin-top: 0;
+}
+
+.ch-field-hint {
+    margin-top: 0.35rem;
+    color: #fbbf24;
+    font-size: 0.82rem;
+}
+
+.ch-remember .form-check-input {
+    width: 1.15em;
+    height: 1.15em;
+    background-color: #161d2c;
+    border-color: #3b4763;
+    cursor: pointer;
+}
+
+.ch-remember .form-check-input:checked {
+    background-color: #ff2e4d;
+    border-color: #ff2e4d;
+}
+
+.ch-remember .form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(255, 46, 77, 0.25);
+}
+
+.ch-remember .form-check-label {
+    color: #cbd5e1;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.ch-login-submit {
+    height: 3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 0;
+    border-radius: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    background: linear-gradient(135deg, #ff2e4d 0%, #e50914 100%);
+    box-shadow: 0 10px 24px rgba(229, 9, 20, 0.3);
+    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+
+.ch-login-submit:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 32px rgba(229, 9, 20, 0.45);
+    filter: brightness(1.05);
+}
+
+.ch-login-submit:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+.ch-login-submit:disabled {
+    opacity: 0.85;
+}
+
+.ch-login-foot {
+    margin: 1.5rem 0 0;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.92rem;
+}
+
+.ch-login-foot a {
+    color: #ff6b7e;
+    font-weight: 600;
+    text-decoration: none;
+    background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+    transition: background-size .2s ease;
+}
+
+.ch-login-foot a:hover,
+.ch-login-foot a:focus-visible {
+    background-size: 100% 1px;
+}
+
+/* Tablet: keep both columns but tighten the padding. */
+@media (max-width: 991.98px) {
+    .ch-login-visual,
+    .ch-login-panel {
+        padding: 1.75rem;
+    }
+
+    .ch-login-card {
+        padding: 1.75rem 1.5rem;
+    }
+}
+
+/* Phone (< 768px): visual hidden (d-none d-md-flex), one centred card. */
+@media (max-width: 767.98px) {
+    .ch-login {
+        padding: 1.5rem 1rem 2.5rem;
+    }
+
+    .ch-login-shell {
+        max-width: 440px;
+        min-height: 0;
+        border: 0;
+        box-shadow: none;
+        background: transparent;
+    }
+
+    .ch-login-panel {
+        padding: 0;
+    }
+
+    .ch-login-card {
+        max-width: none;
+        padding: 1.75rem 1.25rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ch-login-posters img {
+        animation: none;
+    }
+
+    .ch-login-submit,
+    .ch-login-submit:hover:not(:disabled) {
+        transform: none;
+        transition: none;
+    }
+}
