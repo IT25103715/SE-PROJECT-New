@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+    Image CAPTCHA shown right before a payment is submitted. Shared by
+    booking/payment-details.html (card) and booking/seatmap.html step 2 (wallet / bank transfer).
+    Must sit INSIDE the payment form: the typed characters go in the "humanToken" field, which
+    BookingController#create checks before any payment runs. The picture comes from
+    GET /bookings/captcha ("New code" asks for a fresh one with ?refresh=true).
+    See HumanVerificationService for the server side. Pages read window.humanCheck.
+-->
+<div th:fragment="widget" id="humanCheckBlock" class="mb-3">
+    <div class="ch-captcha" id="humanCheck" th:classappend="${verificationError != null} ? 'is-invalid' : ''">
+        <label class="ch-captcha-label" for="humanToken">Security check - type the characters you see</label>
+        <div class="ch-captcha-row">
+            <img class="ch-captcha-img" id="humanCheckImage" width="180" height="60"
+                 th:src="@{/bookings/captcha}" src="/bookings/captcha"
+                 alt="CAPTCHA image - type the characters shown">
+            <button type="button" class="btn btn-outline-secondary btn-sm ch-captcha-refresh" id="humanCheckRefresh"
+                    title="Show a different image" aria-label="Show a different CAPTCHA image">&#8635; New code</button>
+        </div>
+        <input type="text" class="form-control ch-captcha-input" name="humanToken" id="humanToken"
+               maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false"
+               placeholder="Enter code"
+               th:classappend="${verificationError != null} ? 'is-invalid' : ''">
+    </div>
+    <div class="ch-human-check-error" id="humanCheckError"
+         th:classappend="${verificationError == null} ? 'd-none' : ''"
+         th:text="${verificationError} ?: _">
+        Please type the characters shown in the image.
+    </div>
+
+    <script th:inline="javascript">
+        (function () {
+            const imageUrl = /*[[@{/bookings/captcha}]]*/ '/bookings/captcha';
+            const codeLength = 5; // keep in sync with HumanVerificationService.CODE_LENGTH
+            const block = document.getElementById('humanCheck');
+            const image = document.getElementById('humanCheckImage');
+            const refreshBtn = document.getElementById('humanCheckRefresh');
+            const input = document.getElementById('humanToken');
+            const errorEl = document.getElementById('humanCheckError');
+            const defaultError = 'Please type the characters shown in the image.';
+
+            function showError(message) {
+                errorEl.textContent = message || defaultError;
+                errorEl.classList.remove('d-none');
+                block.classList.add('is-invalid');
+                input.classList.add('is-invalid');
+            }
+
+            function clearError() {
+                errorEl.classList.add('d-none');
+                block.classList.remove('is-invalid');
+                input.classList.remove('is-invalid');
+            }
+
+            function refresh() {
+                // New server-side code + new picture; the timestamp stops the browser reusing a cached image.
+                image.src = imageUrl + '?refresh=true&t=' + Date.now();
+                input.value = '';
+                input.focus();
+            }
+
+            refreshBtn.addEventListener('click', refresh);
+            input.addEventListener('input', function () {
+                this.value = this.value.replace(/\s+/g, '').toUpperCase();
+                if (this.value.length >= codeLength) clearError();
+            });
+
+            // Coming back to the page with the Back button can show a stale picture - get a fresh one.
+            window.addEventListener('pageshow', function (e) { if (e.persisted) refresh(); });
+
+            window.humanCheck = {
+                passed: () => input.value.trim().length >= codeLength,
+                showError: () => showError(defaultError),
+                focus: () => input.focus(),
+                // Used by the PayPal button (seatmap.html): the typed code, a server error message,
+                // and a fresh image after the server has used up the current code.
+                value: () => input.value.trim(),
+                showMessage: (message) => showError(message),
+                refresh: () => refresh()
+            };
+        })();
+    </script>
+</div>
+</body>
+</html>

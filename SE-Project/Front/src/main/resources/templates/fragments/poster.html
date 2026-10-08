@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+    Small poster thumbnail + click-to-enlarge modal. Shared by Movies Overview
+    and Showtimes Overview so both list a movie's poster the same way.
+    modalId must be unique per row on the page (e.g. 'movie-7' or
+    'showtime-42') since a list page renders many of these and Bootstrap
+    modals need distinct DOM ids.
+-->
+<div th:fragment="thumbnail(title, posterUrl, modalId)" class="d-flex align-items-center gap-2">
+    <img th:if="${!#strings.isEmpty(posterUrl)}" th:src="${posterUrl}" alt="Poster"
+         class="rounded flex-shrink-0" style="width:80px;height:110px;object-fit:cover;cursor:pointer;"
+         data-bs-toggle="modal" th:attr="data-bs-target='#posterModal-' + ${modalId}"
+         onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%22110%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23e9ecef%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2210%22 fill=%22%236c757d%22%3ENo Poster%3C/text%3E%3C/svg%3E'">
+    <div th:if="${#strings.isEmpty(posterUrl)}"
+         class="rounded bg-light text-muted d-flex flex-column align-items-center justify-content-center small text-center flex-shrink-0"
+         style="width:80px;height:110px;">
+        <span style="font-size:1.5rem;">&#127909;</span>
+        No Poster
+    </div>
+    <span th:text="${title}">Title</span>
+
+    <!-- Larger poster preview, opened by clicking the thumbnail -->
+    <div class="modal fade" th:if="${!#strings.isEmpty(posterUrl)}" th:id="'posterModal-' + ${modalId}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" th:text="${title}">Title</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img th:src="${posterUrl}" alt="Poster" class="img-fluid rounded" style="max-height: 70vh;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

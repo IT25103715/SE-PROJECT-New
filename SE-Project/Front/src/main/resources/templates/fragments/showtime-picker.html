@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<!--
+    "Select a Showtime" picker: one movie's upcoming approved showtimes as time-slot buttons,
+    grouped by day. Used on the movie page (movies/detail.html) and above the seat map
+    (booking/seatmap.html). Data comes from ShowtimeService#findUpcomingApprovedByMovieGroupedByDate.
+    Each slot is a plain link to the existing GET /bookings/new?showtimeId=X seat map, jumping
+    straight to its seat section (#seatSelection). currentShowtimeId (null on the movie page)
+    marks the showtime whose seats are being shown. Logged-out visitors are sent to login.
+-->
+<section th:fragment="picker(showtimesByDate, currentShowtimeId)" class="ch-showtime-picker" aria-labelledby="showtimePickerTitle">
+    <h4 id="showtimePickerTitle" class="ch-showtime-picker-title">Select a Showtime</h4>
+
+    <p th:if="${#maps.isEmpty(showtimesByDate)}" class="text-muted mb-0">No upcoming showtimes scheduled yet.</p>
+    <p th:unless="${#maps.isEmpty(showtimesByDate)}" sec:authorize="!isAuthenticated()" class="small text-muted">
+        Log in to choose your seats.
+    </p>
+
+    <!-- Days sit side by side in one horizontal row (wrapping onto a new line when out of room). -->
+    <div class="ch-showtime-days">
+        <div class="ch-showtime-day" th:each="day : ${showtimesByDate}">
+            <div class="ch-showtime-date" th:text="${#temporals.format(day.key, 'EEE, dd MMM yyyy')}">Sat, 27 Sep 2026</div>
+            <div class="ch-showtime-slots">
+                <a th:each="st : ${day.value}" class="ch-showtime-slot"
+                   th:classappend="${st.id == currentShowtimeId} ? 'active' : ''"
+                   th:attr="aria-current=${st.id == currentShowtimeId ? 'true' : null}"
+                   th:href="${#authorization.expression('isAuthenticated()')} ? @{/bookings/new(showtimeId=${st.id})} + '#seatSelection' : @{/auth/login}">
+                    <span class="ch-showtime-time" th:text="${#temporals.format(st.dateTime, 'h:mm a')}">2:30 PM</span>
+                    <span class="ch-showtime-meta" th:text="${st.cinemaHall.name}">Hall A</span>
+                    <span class="ch-showtime-meta" th:text="'Rs. ' + ${st.price}">Rs. 1000.00</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>
