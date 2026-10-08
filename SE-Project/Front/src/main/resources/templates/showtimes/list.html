@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Showtimes')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+    <h2 class="mb-4">All Showtimes</h2>
+    <table class="table table-striped bg-white">
+        <thead><tr><th>Movie</th><th>Hall</th><th>Date &amp; Time</th><th>Price</th><th></th></tr></thead>
+        <tbody>
+        <tr th:each="showtime : ${showtimes}">
+            <td th:text="${showtime.movie.title}">Movie</td>
+            <td th:text="${showtime.cinemaHall.name}">Hall</td>
+            <td th:text="${#temporals.format(showtime.dateTime, 'dd MMM yyyy, HH:mm')}">Date</td>
+            <td th:text="'Rs. ' + ${showtime.price}">Price</td>
+            <td>
+                <a class="btn btn-sm btn-primary" sec:authorize="!hasRole('CINEMA_STAFF')"
+                   th:href="@{/movies/{id}(id=${showtime.movie.id})}">View / Book</a>
+            </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(showtimes)}"><td colspan="5" class="text-muted">No showtimes scheduled yet.</td></tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
