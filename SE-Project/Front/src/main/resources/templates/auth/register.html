@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Register')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="ch-auth-card">
+            <h2 class="mb-4">Create your account</h2>
+
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}">Error</div>
+
+            <form th:action="@{/auth/register}" th:object="${registrationDto}" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Full name</label>
+                    <input type="text" th:field="*{name}" class="form-control">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" th:field="*{email}" class="form-control">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                </div>
+                <!-- Phone numbers: neither is required on its own, but at least one must be filled in
+                     (PhoneNumberRule - the same check on registration, account edit and the admin form). -->
+                <fieldset class="mb-3">
+                    <legend class="form-label fs-6 mb-1">Phone numbers</legend>
+                    <div class="form-text mt-0 mb-2">Give at least one - we use it to contact you about your bookings.</div>
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <label class="form-label small mb-1" for="phoneNumber">Primary</label>
+                            <input type="tel" th:field="*{phoneNumber}" class="form-control" placeholder="e.g. 077 123 4567"
+                                   th:classappend="${#fields.hasErrors('phoneNumber')} ? 'is-invalid'">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small mb-1" for="phoneNumberAlt">Alternate</label>
+                            <input type="tel" th:field="*{phoneNumberAlt}" class="form-control" placeholder="optional"
+                                   th:classappend="${#fields.hasErrors('phoneNumber')} ? 'is-invalid'">
+                        </div>
+                    </div>
+                    <div class="text-danger small mt-1" th:if="${#fields.hasErrors('phoneNumber')}" th:errors="*{phoneNumber}">Please provide at least one phone number.</div>
+                </fieldset>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" th:field="*{password}" class="form-control">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Confirm password</label>
+                    <input type="password" th:field="*{confirmPassword}" class="form-control">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Register</button>
+            </form>
+            <p class="mt-3">Already have an account? <a th:href="@{/auth/login}">Login here</a></p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

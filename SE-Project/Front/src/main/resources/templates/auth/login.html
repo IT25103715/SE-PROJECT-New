@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Login')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="ch-login">
+    <!-- Two columns from 768px: a cinematic visual on the left, the sign-in card on the right.
+         Below 768px the visual is hidden and the card is centred on its own.
+         Everything on the left comes from real data (AuthController#loginPage): posters of the
+         films with upcoming showtimes and how many there are - no invented statistics. -->
+    <div class="ch-login-shell">
+        <section class="ch-login-visual d-none d-md-flex" aria-label="About CinemaX Lanka">
+            <div class="ch-login-posters" aria-hidden="true" th:if="${!#lists.isEmpty(loginPosters)}">
+                <img th:each="poster, it : ${loginPosters}" th:src="${poster}" alt="" loading="lazy"
+                     th:style="'animation-delay: -' + ${it.index * 1.3} + 's'">
+            </div>
+            <div class="ch-login-shade" aria-hidden="true"></div>
+
+            <div class="ch-login-visual-content">
+                <span class="ch-hero-kicker">CinemaX Lanka</span>
+                <h2 class="ch-login-headline">Experience cinema like never before.</h2>
+                <p class="ch-login-lead">Book in a minute, skip the queue, and have your snacks waiting.</p>
+
+                <ul class="ch-login-pills">
+                    <li>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 11V7a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v4M3 11h18v5H3zM5 16v3M19 16v3"/></svg>
+                        Pick your exact seats
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>
+                        Skip the line with QR tickets
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12l-1.5 12h-9zM8 8a2 2 0 0 1 4-1 2 2 0 0 1 4 1"/></svg>
+                        Pre-order popcorn &amp; drinks
+                    </li>
+                </ul>
+
+                <a class="ch-login-proof" th:href="@{/showtimes}" th:if="${nowShowingCount > 0}">
+                    <span class="ch-login-proof-stack" aria-hidden="true">
+                        <img th:each="poster, it : ${loginPosters}" th:if="${it.index < 4}" th:src="${poster}" alt="">
+                    </span>
+                    <span>
+                        <strong th:text="${nowShowingCount} + (${nowShowingCount == 1} ? ' film' : ' films') + ' showing now'">12 films showing now</strong>
+                        <span class="d-block small">See showtimes &rarr;</span>
+                    </span>
+                </a>
+            </div>
+        </section>
+
+        <section class="ch-login-panel">
+            <div class="ch-login-card">
+                <h1 class="ch-login-title">Welcome back</h1>
+                <p class="ch-login-sub">Sign in to book tickets and see your bookings.</p>
+
+                <div th:if="${param.error}" class="alert alert-danger ch-login-alert" role="alert" id="loginError">
+                    The email or password is incorrect. Please try again.
+                </div>
+                <div th:if="${param.registered}" class="alert alert-success ch-login-alert" role="status">
+                    Account created - sign in to continue.
+                </div>
+
+                <form th:action="@{/auth/login}" method="post" id="loginForm" novalidate>
+                    <div class="mb-3">
+                        <label class="form-label" for="username">Email address</label>
+                        <div class="ch-input">
+                            <svg class="ch-input-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zM3 7l9 6 9-6"/></svg>
+                            <input type="email" id="username" name="username" class="form-control"
+                                   placeholder="you@example.com" autocomplete="username" required autofocus
+                                   aria-describedby="usernameError"
+                                   th:attr="aria-invalid=${loginFailed ? 'true' : null}">
+                        </div>
+                        <div class="ch-field-error" id="usernameError" aria-live="polite"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="password">Password</label>
+                        <div class="ch-input">
+                            <svg class="ch-input-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+                            <input type="password" id="password" name="password" class="form-control"
+                                   placeholder="Your password" autocomplete="current-password" required
+                                   aria-describedby="passwordError capsLockWarning"
+                                   th:attr="aria-invalid=${loginFailed ? 'true' : null}">
+                            <button type="button" class="ch-input-toggle" id="passwordToggle"
+                                    aria-label="Show password" aria-controls="password" aria-pressed="false">
+                                <svg class="ch-eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <svg class="ch-eye-closed" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A9.8 9.8 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.6 6.6A16.6 16.6 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                            </button>
+                        </div>
+                        <div class="ch-field-error" id="passwordError" aria-live="polite"></div>
+                        <div class="ch-field-hint d-none" id="capsLockWarning" aria-live="polite">Caps Lock is on.</div>
+                    </div>
+
+                    <div class="form-check ch-remember mb-4">
+                        <input class="form-check-input" type="checkbox" id="rememberMe" name="remember-me">
+                        <label class="form-check-label" for="rememberMe">Keep me signed in for 14 days</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 ch-login-submit" id="loginSubmit">
+                        <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                        <span class="ch-login-submit-text">Sign in</span>
+                    </button>
+                </form>
+
+                <p class="ch-login-foot">Don't have an account? <a th:href="@{/auth/register}">Register now</a></p>
+            </div>
+        </section>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script>
+    (function () {
+        const form = document.getElementById('loginForm');
+        const email = document.getElementById('username');
+        const password = document.getElementById('password');
+        const toggle = document.getElementById('passwordToggle');
+        const submit = document.getElementById('loginSubmit');
+        const capsWarning = document.getElementById('capsLockWarning');
+        const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        // Show / hide password.
+        toggle.addEventListener('click', function () {
+            const show = password.type === 'password';
+            password.type = show ? 'text' : 'password';
+            toggle.setAttribute('aria-pressed', String(show));
+            toggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+            toggle.classList.toggle('is-visible', show);
+            password.focus();
+        });
+
+        // Caps Lock hint while typing the password.
+        ['keydown', 'keyup'].forEach(type => password.addEventListener(type, function (e) {
+            if (typeof e.getModifierState === 'function') {
+                capsWarning.classList.toggle('d-none', !e.getModifierState('CapsLock'));
+            }
+        }));
+
+        function setError(input, message) {
+            const box = document.getElementById(input.id + 'Error');
+            box.textContent = message || '';
+            input.classList.toggle('is-invalid', !!message);
+            if (message) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid');
+            return !message;
+        }
+
+        function checkEmail() {
+            const value = email.value.trim();
+            if (!value) return setError(email, 'Please enter your email address.');
+            if (!EMAIL_PATTERN.test(value)) return setError(email, 'That doesn\'t look like an email address.');
+            return setError(email, '');
+        }
+
+        function checkPassword() {
+            return setError(password, password.value ? '' : 'Please enter your password.');
+        }
+
+        // Validate a field when the user leaves it, and clear its error as soon as they fix it.
+        email.addEventListener('blur', () => { if (email.value) checkEmail(); });
+        email.addEventListener('input', () => { if (email.classList.contains('is-invalid')) checkEmail(); });
+        password.addEventListener('input', () => { if (password.classList.contains('is-invalid')) checkPassword(); });
+
+        form.addEventListener('submit', function (e) {
+            const emailOk = checkEmail();
+            const passwordOk = checkPassword();
+            if (!emailOk || !passwordOk) {
+                e.preventDefault();
+                (emailOk ? password : email).focus();
+                return;
+            }
+            // Loading state while the server checks the credentials.
+            submit.disabled = true;
+            submit.setAttribute('aria-busy', 'true');
+            submit.querySelector('.spinner-border').classList.remove('d-none');
+            submit.querySelector('.ch-login-submit-text').textContent = 'Signing in…';
+        });
+
+        // Coming back with the browser's Back button must not leave the button spinning.
+        window.addEventListener('pageshow', function () {
+            submit.disabled = false;
+            submit.removeAttribute('aria-busy');
+            submit.querySelector('.spinner-border').classList.add('d-none');
+            submit.querySelector('.ch-login-submit-text').textContent = 'Sign in';
+        });
+    })();
+</script>
+</body>
+</html>
