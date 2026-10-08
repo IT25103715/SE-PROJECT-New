@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head(${movie.title})}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="ch-detail-hero">
+    <img th:if="${movie.posterUrl}" th:src="${movie.posterUrl}" class="ch-hero-bg" alt="">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <img th:if="${movie.posterUrl}" th:src="${movie.posterUrl}" class="img-fluid rounded" alt="poster">
+        </div>
+        <div class="col-md-8">
+            <h2 th:text="${movie.title}">Title</h2>
+            <p class="text-muted mb-1" th:text="${movie.genre} + ' &middot; ' + ${movie.durationMinutes} + ' min'">Genre</p>
+            <span class="badge ch-lang-badge mb-2" th:text="${movie.language}">ENGLISH</span>
+            <p class="mb-3"><span class="ch-rating-lg" th:insert="~{fragments/rating :: stars(${rating})}"></span></p>
+            <p class="fw-semibold" th:if="${movie.releaseDate != null and movie.releaseDate.isAfter(T(java.time.LocalDate).now())}"
+               th:text="'Releases ' + ${#temporals.format(movie.releaseDate, 'dd MMM yyyy')}">Releases 01 Jan 2027</p>
+            <p th:text="${movie.description}">Description</p>
+
+            <!-- Clicking a time slot opens that showtime's seat map (fragments/showtime-picker.html). -->
+            <div class="mt-4" th:replace="~{fragments/showtime-picker :: picker(${showtimesByDate}, null)}"></div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Customer reviews (Feedback rows of type REVIEW linked to this movie), newest first.
+         Only the reviewer's first name is shown. -->
+    <section class="ch-reviews" aria-labelledby="reviewsHeading">
+        <h2 id="reviewsHeading" class="mb-3">Reviews <small class="text-muted fs-6 fw-normal" th:if="${!#lists.isEmpty(reviews)}" th:text="'(' + ${#lists.size(reviews)} + ')'">(3)</small></h2>
+        <article class="ch-review" th:each="review : ${reviews}">
+            <div class="ch-review-head">
+                <span class="ch-review-author" th:text="${#strings.arraySplit(review.user.name, ' ')[0]}">Nimal</span>
+                <span class="ch-rating" th:if="${review.rating != null}">
+                    <span class="ch-stars" aria-hidden="true"><span class="ch-stars-fill" th:style="'width: ' + ${review.rating * 20} + '%'"></span></span>
+                    <span class="visually-hidden" th:text="${review.rating} + ' out of 5 stars'">4 out of 5 stars</span>
+                </span>
+                <span class="ch-review-date" th:text="${#temporals.format(review.createdAt, 'dd MMM yyyy')}">01 Oct 2026</span>
+            </div>
+            <p class="ch-review-text" th:text="${review.message}">Great movie!</p>
+        </article>
+        <p class="text-muted" th:if="${#lists.isEmpty(reviews)}">No reviews yet - be the first to review this movie after you watch it.</p>
+        <a class="btn btn-outline-light btn-sm mt-3" th:href="@{/feedback}">Write a review</a>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
