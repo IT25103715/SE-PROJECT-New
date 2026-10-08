@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My Account')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}">Error</div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2 class="mb-4">My Account</h2>
+
+            <!-- Membership program: members unlock "Members Only" promotions. The threshold comes from
+                 MembershipService.BOOKINGS_FOR_MEMBERSHIP via the controller - never hard-coded here. -->
+            <div th:if="${showMembership}" class="ch-membership" th:classappend="${user.member} ? 'is-member'">
+                <div class="ch-membership-icon" aria-hidden="true">&#9733;</div>
+                <div class="flex-grow-1">
+                    <th:block th:if="${user.member}">
+                        <p class="ch-membership-title">Member <span class="badge ch-member-badge ms-1">CinemaX Member</span></p>
+                        <p class="ch-membership-text">
+                            <span th:if="${user.memberSince != null}" th:text="'Member since ' + ${#temporals.format(user.memberSince, 'dd MMM yyyy')} + '. '">Member since 01 Oct 2026. </span>
+                            Members Only promotions on the homepage are unlocked for you.
+                        </p>
+                    </th:block>
+                    <th:block th:unless="${user.member}">
+                        <p class="ch-membership-title">Not yet a member</p>
+                        <p class="ch-membership-text"
+                           th:text="'Book ' + ${membershipThreshold} + ' times to unlock member promotions - '
+                                    + ${bookingsToMembership} + (${bookingsToMembership == 1} ? ' more booking to go.' : ' more bookings to go.')">
+                            Book 5 times to unlock member promotions - 3 more bookings to go.</p>
+                        <div class="progress" role="progressbar" aria-label="Progress to membership"
+                             th:attr="aria-valuenow=${confirmedBookings},aria-valuemax=${membershipThreshold}" aria-valuemin="0">
+                            <div class="progress-bar" th:style="'width: ' + ${confirmedBookings >= membershipThreshold ? 100 : confirmedBookings * 100 / membershipThreshold} + '%'"></div>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+
+            <table class="table bg-white">
+                <tr><th>Name</th><td th:text="${user.name}">Name</td></tr>
+                <tr><th>Email</th><td th:text="${user.email}">Email</td></tr>
+                <tr><th>Phone</th><td th:text="${user.phoneNumber} ?: '-'">Phone</td></tr>
+                <tr><th>Alternate phone</th><td th:text="${user.phoneNumberAlt} ?: '-'">Alternate phone</td></tr>
+                <tr><th>Address</th><td th:text="${user.address} ?: '-'">Address</td></tr>
+                <tr><th>Account status</th><td th:text="${user.status}">Status</td></tr>
+            </table>
+
+            <a class="btn btn-primary" th:href="@{/account/edit}">Edit Details</a>
+            <a class="btn btn-outline-primary" th:href="@{/payments}">My Payment History</a>
+
+            <hr class="my-4">
+            <h5>Danger zone</h5>
+            <form th:action="@{/account/deactivate}" method="post" class="d-inline" onsubmit="return confirm('Deactivate your account?');">
+                <button type="submit" class="btn btn-outline-warning">Deactivate Account</button>
+            </form>
+            <form th:action="@{/account/delete}" method="post" class="d-inline" onsubmit="return confirm('Permanently delete your account? This cannot be undone.');">
+                <button type="submit" class="btn btn-outline-danger">Delete Account</button>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
