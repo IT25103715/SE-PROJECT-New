@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Movie Form')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2 class="mb-4" th:text="${movie.id != null} ? 'Edit Movie' : 'New Movie'">Movie Form</h2>
+
+            <form th:action="${movie.id != null} ? @{/manager/movies/{id}/edit(id=${movie.id})} : @{/manager/movies/new}"
+                  th:object="${movie}" method="post">
+                <input type="hidden" th:field="*{id}">
+                <div class="mb-3">
+                    <label class="form-label">Title</label>
+                    <input type="text" th:field="*{title}" class="form-control">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Genre</label>
+                    <input type="text" th:field="*{genre}" class="form-control" placeholder="e.g. Sci-Fi / Thriller">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('genre')}" th:errors="*{genre}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Language</label>
+                    <select th:field="*{language}" class="form-select">
+                        <option th:each="lang : ${T(com.cinemahub.model.Language).values()}" th:value="${lang}" th:text="${lang}"></option>
+                    </select>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('language')}" th:errors="*{language}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea th:field="*{description}" class="form-control" rows="4"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Duration (minutes)</label>
+                    <input type="number" th:field="*{durationMinutes}" class="form-control">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('durationMinutes')}" th:errors="*{durationMinutes}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Poster URL</label>
+                    <input type="text" th:field="*{posterUrl}" class="form-control" placeholder="https://...">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Release date (optional)</label>
+                    <input type="date" th:field="*{releaseDate}" class="form-control">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('releaseDate')}" th:errors="*{releaseDate}"></div>
+                    <div class="form-text">A future date lists the movie under "Coming Soon" on the homepage until it has showtimes. Leave blank for movies already released.</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a class="btn btn-outline-secondary" th:href="@{/manager/movies}">Cancel</a>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Movies Overview')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Movies Overview</h2>
+        <a class="btn btn-outline-secondary" th:href="@{/manager/movies}">Manage Movies</a>
+    </div>
+    <p class="text-muted">Every movie in the system, regardless of who submitted it - pending submissions are listed first.</p>
+
+    <table class="table table-striped bg-white align-middle">
+        <thead>
+        <tr>
+            <th>Movie Title</th>
+            <th>Genre</th>
+            <th>Created By</th>
+            <th>Date Submitted</th>
+            <th>Approval Status</th>
+            <th sec:authorize="hasRole('SYSTEM_ADMIN')">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="movie : ${movies}">
+            <td>
+                <div th:replace="~{fragments/poster :: thumbnail(${movie.title}, ${movie.posterUrl}, 'movie-' + ${movie.id})}"></div>
+            </td>
+            <td th:text="${movie.genre}">Genre</td>
+            <td th:text="${movie.createdBy != null} ? ${movie.createdBy.name} : '—'">Created by</td>
+            <td th:text="${#temporals.format(movie.createdAt, 'dd MMM yyyy, HH:mm')}">Date</td>
+            <td>
+                <span class="badge bg-warning text-dark" th:if="${movie.approvalStatus.name() == 'PENDING'}">&#128993; Pending</span>
+                <span class="badge bg-success" th:if="${movie.approvalStatus.name() == 'APPROVED'}">&#128994; Approved</span>
+                <span th:if="${movie.approvalStatus.name() == 'REJECTED'}">
+                    <span class="badge bg-danger">&#128308; Rejected</span>
+                    <div class="text-muted small" th:if="${movie.rejectionReason}" th:text="${movie.rejectionReason}">Reason</div>
+                </span>
+            </td>
+            <td sec:authorize="hasRole('SYSTEM_ADMIN')">
+                <div class="d-flex flex-wrap gap-1 align-items-center" th:if="${movie.approvalStatus.name() == 'PENDING'}">
+                    <form method="post" th:action="@{/manager/movies-overview/{id}/approve(id=${movie.id})}" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-success">Approve</button>
+                    </form>
+                    <form method="post" th:action="@{/manager/movies-overview/{id}/reject(id=${movie.id})}"
+                          class="d-inline-flex gap-1 align-items-center">
+                        <input type="text" name="reason" class="form-control form-control-sm" style="width: 140px;"
+                               placeholder="Reason (optional)">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        <tr th:if="${movies.isEmpty()}">
+            <td colspan="6" class="text-center text-muted">No movies in the system yet.</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

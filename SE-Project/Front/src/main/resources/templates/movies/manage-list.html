@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Manage Movies')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}">Error</div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Manage Movies</h2>
+        <a class="btn btn-primary" th:href="@{/manager/movies/new}">+ New Movie</a>
+    </div>
+
+    <table class="table table-striped bg-white">
+        <thead><tr><th>Title</th><th>Genre</th><th>Language</th><th>Duration</th><th>Approval</th><th>Actions</th></tr></thead>
+        <tbody>
+        <tr th:each="movie : ${movies}">
+            <td th:text="${movie.title}">Title</td>
+            <td th:text="${movie.genre}">Genre</td>
+            <td th:text="${movie.language}">Language</td>
+            <td th:text="${movie.durationMinutes} + ' min'">Duration</td>
+            <td>
+                <span class="badge bg-warning text-dark" th:if="${movie.approvalStatus.name() == 'PENDING'}">&#128993; Pending Approval</span>
+                <span class="badge bg-success" th:if="${movie.approvalStatus.name() == 'APPROVED'}">&#128994; Approved</span>
+                <span th:if="${movie.approvalStatus.name() == 'REJECTED'}">
+                    <span class="badge bg-danger">&#128308; Rejected</span>
+                    <div class="text-muted small" th:if="${movie.rejectionReason}" th:text="${movie.rejectionReason}">Reason</div>
+                </span>
+            </td>
+            <td class="d-flex gap-1">
+                <a class="btn btn-sm btn-outline-primary" th:href="@{/manager/movies/{id}/edit(id=${movie.id})}">Edit</a>
+                <a class="btn btn-sm btn-outline-danger" th:href="@{/manager/movies/{id}/delete(id=${movie.id})}">Delete</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
