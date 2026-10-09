@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Car Parking')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Car Parking</h2>
+        <a class="btn btn-primary" th:href="@{/manager/parking/new}">+ New Parking Option</a>
+    </div>
+    <p class="text-muted small">Customers can add parking at checkout while slots are free for their showtime. Changes need System Admin approval. If several options are approved and available, customers are offered the first one.</p>
+
+    <table class="table table-striped bg-white align-middle">
+        <thead><tr><th>Label</th><th>Price per booking</th><th>Slots per showtime</th><th>Available</th><th>Approval</th><th>Actions</th></tr></thead>
+        <tbody>
+        <tr th:each="option : ${parkingOptions}">
+            <td th:text="${option.label}">Standard Parking</td>
+            <td th:text="'Rs. ' + ${option.price}">Rs. 300.00</td>
+            <td th:text="${option.totalSlots}">50</td>
+            <td>
+                <span class="badge bg-success" th:if="${option.available}">Available</span>
+                <span class="badge bg-secondary" th:unless="${option.available}">Deactivated</span>
+            </td>
+            <td>
+                <span class="badge bg-warning text-dark" th:if="${option.approvalStatus.name() == 'PENDING'}">&#128993; Pending Approval</span>
+                <span class="badge bg-success" th:if="${option.approvalStatus.name() == 'APPROVED'}">&#128994; Approved</span>
+                <span th:if="${option.approvalStatus.name() == 'REJECTED'}">
+                    <span class="badge bg-danger">&#128308; Rejected</span>
+                    <div class="text-muted small" th:if="${option.rejectionReason}" th:text="${option.rejectionReason}">Reason</div>
+                </span>
+            </td>
+            <td class="d-flex flex-wrap gap-1">
+                <a class="btn btn-sm btn-outline-primary" th:href="@{/manager/parking/{id}/edit(id=${option.id})}">Edit</a>
+                <form th:if="${option.available}" method="post" th:action="@{/manager/parking/{id}/deactivate(id=${option.id})}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate</button>
+                </form>
+                <form th:unless="${option.available}" method="post" th:action="@{/manager/parking/{id}/reactivate(id=${option.id})}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-success">Reactivate</button>
+                </form>
+            </td>
+        </tr>
+        <tr th:if="${parkingOptions.isEmpty()}">
+            <td colspan="6" class="text-center text-muted">No parking options yet.</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

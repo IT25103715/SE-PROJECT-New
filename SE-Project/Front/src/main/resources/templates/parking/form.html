@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Parking Option Form')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2 class="mb-4" th:text="${parkingOption.id != null} ? 'Edit Parking Option' : 'New Parking Option'">Parking Option Form</h2>
+
+            <form th:action="${parkingOption.id != null} ? @{/manager/parking/{id}/edit(id=${parkingOption.id})} : @{/manager/parking/new}"
+                  th:object="${parkingOption}" method="post">
+                <input type="hidden" th:field="*{id}">
+                <div class="mb-3">
+                    <label class="form-label" for="label">Label</label>
+                    <input type="text" th:field="*{label}" class="form-control" placeholder="e.g. Standard Parking" required>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('label')}" th:errors="*{label}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="price">Price per booking (Rs.)</label>
+                    <input type="number" step="0.01" min="0" th:field="*{price}" class="form-control" placeholder="e.g. 300.00" required>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="totalSlots">Parking slots per showtime</label>
+                    <input type="number" min="1" th:field="*{totalSlots}" class="form-control" placeholder="e.g. 50" required>
+                    <div class="form-text">Parking stops being offered for a showtime once this many confirmed bookings for it include parking.</div>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('totalSlots')}" th:errors="*{totalSlots}"></div>
+                </div>
+                <p class="form-text">Saving sends the option for System Admin approval (unless you are the System Admin).</p>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a class="btn btn-outline-secondary" th:href="@{/manager/parking}">Cancel</a>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
