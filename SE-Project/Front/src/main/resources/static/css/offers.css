@@ -1,0 +1,310 @@
+/* =========================================================================
+   CinemaX Lanka - homepage "Offers & Promotions" section (home.html only).
+   Kept in its own file and loaded after style.css, so it overrides the older
+   .ch-offers-section rules there without touching the shared stylesheet.
+   ========================================================================= */
+
+/* ---------- Homepage: Offers & Promotions (bottom of the page) ----------
+   Full-width navy band, centred heading, 4 tall poster cards per row with a white
+   "Explore More" button under each, and white round arrows on the sides. */
+
+.ch-offers-section {
+    margin: 4rem 0 1rem;
+    padding: 2.75rem 0 2.25rem;
+    background: linear-gradient(180deg, #121735 0%, #0f1430 100%);
+    border: 1px solid var(--ch-border);
+    border-radius: var(--ch-radius);
+}
+
+.ch-offers-heading {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 1.85rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-align: center;
+    color: #fff;
+    margin: 0 0 2rem;
+}
+
+/* no red bar before this heading (the global h2 accent) */
+main.container .ch-offers-heading::before {
+    display: none;
+}
+
+main.container .ch-offers-heading {
+    justify-content: center;
+}
+
+.ch-offers-carousel {
+    padding: 0 3.25rem;
+}
+
+.ch-offers-row {
+    gap: 1.5rem;
+    padding: 0.2rem 0.1rem 0.4rem;
+}
+
+.ch-offer-item {
+    flex: 0 0 calc((100% - 4.5rem) / 4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.4rem;
+    scroll-snap-align: start;
+    min-width: 0;
+}
+
+.ch-offer-poster {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    display: flex;
+    flex-direction: column;
+    padding: 1.4rem 1.3rem;
+    border-radius: 0.35rem;
+    overflow: hidden;
+    color: #fff;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+    container-type: inline-size;
+}
+
+/* Colour themes. Named ones (red/blue/gold/orange/green/purple) are picked by the manager on the
+   promotion / food combo form (CardTheme enum); 0/1/2/food are the original automatic classes. */
+.ch-offer-theme-0, .ch-offer-theme-red { background: radial-gradient(circle at 80% 15%, rgba(255, 90, 110, 0.45), transparent 55%), linear-gradient(160deg, #6b0f22 0%, #2a0b1d 55%, #120b1a 100%); }
+.ch-offer-theme-1, .ch-offer-theme-blue { background: radial-gradient(circle at 20% 85%, rgba(77, 141, 255, 0.45), transparent 60%), linear-gradient(160deg, #1c3fa8 0%, #142a72 55%, #0c173d 100%); }
+.ch-offer-theme-2, .ch-offer-theme-gold { background: radial-gradient(circle at 75% 20%, rgba(244, 196, 98, 0.22), transparent 55%), linear-gradient(160deg, #1b2442 0%, #121831 60%, #0b1022 100%); border: 1px solid rgba(244, 196, 98, 0.45); }
+.ch-offer-theme-food, .ch-offer-theme-orange { background: radial-gradient(circle at 85% 80%, rgba(255, 170, 60, 0.4), transparent 55%), linear-gradient(160deg, #a2321b 0%, #5a1612 55%, #23090c 100%); }
+.ch-offer-theme-green { background: radial-gradient(circle at 80% 20%, rgba(80, 220, 150, 0.35), transparent 55%), linear-gradient(160deg, #0f6b48 0%, #0b3f2e 55%, #07201a 100%); }
+.ch-offer-theme-purple { background: radial-gradient(circle at 20% 80%, rgba(190, 120, 255, 0.4), transparent 58%), linear-gradient(160deg, #5b1f9c 0%, #35136a 55%, #170a33 100%); }
+
+.ch-offer-theme-2 .ch-offer-big,
+.ch-offer-theme-2 .ch-offer-kicker,
+.ch-offer-theme-gold .ch-offer-big,
+.ch-offer-theme-gold .ch-offer-kicker { color: #f4c462; }
+
+.ch-offer-deco {
+    position: absolute;
+    right: -14px;
+    bottom: 62px;
+    width: 46%;
+    opacity: 0.16;
+    color: #fff;
+    pointer-events: none;
+}
+
+.ch-offer-kicker {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #ffb3bc;
+}
+
+.ch-offer-title {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    line-height: 1.25;
+    margin: 0.45rem 0 0.6rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.ch-offer-big {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.ch-offer-big span {
+    font-size: 3.4rem;
+    font-size: min(3.4rem, 22cqw);
+    letter-spacing: -1px;
+}
+
+.ch-offer-big small {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.ch-offer-sub {
+    margin-top: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #e6e9f5;
+}
+
+.ch-offer-sub s {
+    opacity: 0.7;
+}
+
+.ch-offer-cond {
+    margin: 0.6rem 0 0;
+    font-size: 0.8rem;
+    color: #d5dbee;
+}
+
+.ch-offer-list {
+    margin: 0.7rem 0 0;
+    padding-left: 1.1rem;
+    font-size: 0.85rem;
+    color: #f1e6e2;
+}
+
+.ch-offer-code {
+    margin-top: auto;
+    align-self: flex-start;
+    padding: 0.4rem 0.75rem;
+    border: 1px dashed rgba(255, 255, 255, 0.7);
+    border-radius: 0.3rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.ch-offer-code strong {
+    letter-spacing: 1.5px;
+}
+
+.ch-offer-valid {
+    margin-top: 0.55rem;
+    font-size: 0.72rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #c7d0e6;
+}
+
+/* White "Explore More" button under each poster */
+.ch-offer-btn {
+    display: inline-block;
+    min-width: 70%;
+    padding: 0.85rem 1.5rem;
+    background: #fff;
+    color: #1f2a6b;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 0.15rem;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.ch-offer-btn:hover,
+.ch-offer-btn:focus-visible {
+    background: var(--ch-accent);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.ch-offer-btn:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+/* White round arrows, vertically centred on the posters */
+.ch-offer-arrow {
+    top: calc(50% - 2.2rem);
+    width: 3.4rem;
+    height: 3.4rem;
+    background: #fff;
+    color: #1f2a6b;
+    border: 0;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.ch-offer-arrow:hover {
+    background: #f1f3fa;
+    color: var(--ch-accent);
+}
+
+.ch-offers-carousel .ch-arrow-left { left: 0.2rem; }
+.ch-offers-carousel .ch-arrow-right { right: 0.2rem; }
+
+@media (max-width: 1199.98px) {
+    .ch-offer-item { flex-basis: calc((100% - 3rem) / 3); }
+}
+
+@media (max-width: 767.98px) {
+    .ch-offers-section { padding: 2rem 0 1.75rem; }
+    .ch-offers-heading { font-size: 1.35rem; margin-bottom: 1.4rem; }
+    .ch-offers-carousel { padding: 0 2.4rem; }
+    .ch-offers-row { gap: 1rem; }
+    .ch-offer-item { flex-basis: calc((100% - 1rem) / 2); gap: 1rem; }
+    .ch-offer-arrow { width: 2.6rem; height: 2.6rem; }
+    .ch-offer-btn { font-size: 0.85rem; padding: 0.65rem 1rem; }
+}
+
+@media (max-width: 575.98px) {
+    .ch-offers-carousel { padding: 0 1.9rem; }
+    .ch-offer-item { flex-basis: 88%; }
+}
+
+/* ---------- Card colour picker on the promotion / food combo forms ---------- */
+.ch-theme-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+.ch-theme-option {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    width: 84px;
+    cursor: pointer;
+}
+.ch-theme-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+.ch-theme-swatch {
+    display: block;
+    width: 100%;
+    height: 50px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+/* "Auto" for promotions = the red / blue / navy-gold rotation */
+.ch-theme-swatch.ch-theme-auto-rotate {
+    background: linear-gradient(90deg, #6b0f22 0 33.3%, #1c3fa8 33.3% 66.6%, #1b2442 66.6% 100%);
+}
+.ch-theme-name {
+    font-size: 0.75rem;
+    text-align: center;
+    line-height: 1.15;
+    color: var(--bs-secondary-color, #adb5bd);
+}
+.ch-theme-option:hover .ch-theme-swatch { transform: translateY(-2px); }
+.ch-theme-option input:checked + .ch-theme-swatch { border-color: #fff; transform: translateY(-2px); }
+.ch-theme-option input:checked ~ .ch-theme-name { color: #fff; font-weight: 600; }
+.ch-theme-option input:focus-visible + .ch-theme-swatch { outline: 2px solid #4d8dff; outline-offset: 2px; }
+
+.ch-theme-preview {
+    position: relative;
+    overflow: hidden;
+    max-width: 260px;
+    margin-top: 0.85rem;
+    padding: 1rem 1.1rem;
+    border-radius: 14px;
+    color: #fff;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+}
+.ch-theme-preview .ch-offer-kicker { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; }
+.ch-theme-preview .ch-offer-big { font-size: 1.6rem; font-weight: 800; line-height: 1.1; margin: 0.2rem 0; }
+.ch-theme-preview-title { font-size: 0.85rem; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
