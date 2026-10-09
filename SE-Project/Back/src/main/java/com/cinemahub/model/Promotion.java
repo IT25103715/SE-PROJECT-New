@@ -337,7 +337,7 @@ public class Promotion {
     public void setCreatedBy(User createdBy) {
         this.createdBy = createdBy;
     }
-
+    
     public String getRejectionReason() {
         return rejectionReason;
     }
