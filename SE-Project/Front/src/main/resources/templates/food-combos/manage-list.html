@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Food Combos')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Food Combos</h2>
+        <a class="btn btn-primary" th:href="@{/manager/food-combos/new}">+ New Food Combo</a>
+    </div>
+    <p class="text-muted small">Bundles of menu items at a special price. Customers can pick them at checkout, and approved
+        combos also appear on the homepage Promotions tab. New or edited combos need System Admin approval before customers
+        see them. A combo is hidden automatically while any of its items is off the menu. Deactivating hides a combo without
+        deleting it.</p>
+
+    <table class="table table-striped bg-white align-middle">
+        <thead>
+        <tr><th>Name</th><th>Includes</th><th>Individual price</th><th>Combo price</th><th>Available</th><th>Approval</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="combo : ${combos}">
+            <td>
+                <strong th:text="${combo.name}">Movie Night Combo</strong>
+                <div class="text-muted small" th:if="${combo.description}" th:text="${combo.description}">For two</div>
+            </td>
+            <td class="small" th:text="${combo.includedSummary}">1 x Large Popcorn + 2 x Soft Drink</td>
+            <td th:text="'Rs. ' + ${combo.individualTotal}">Rs. 1250.00</td>
+            <td>
+                <strong th:text="'Rs. ' + ${combo.bundlePrice}">Rs. 1000.00</strong>
+                <div class="small text-success" th:if="${combo.savings.signum() > 0}" th:text="'Saves Rs. ' + ${combo.savings}">Saves Rs. 250.00</div>
+            </td>
+            <td>
+                <span class="badge bg-success" th:if="${combo.available}">Available</span>
+                <span class="badge bg-secondary" th:unless="${combo.available}">Deactivated</span>
+                <div class="small text-warning" th:if="${combo.available and combo.approvalStatus.name() == 'APPROVED' and !combo.orderable}">
+                    Hidden: an included item is off the menu</div>
+            </td>
+            <td>
+                <span class="badge bg-warning text-dark" th:if="${combo.approvalStatus.name() == 'PENDING'}">&#128993; Pending Approval</span>
+                <span class="badge bg-success" th:if="${combo.approvalStatus.name() == 'APPROVED'}">&#128994; Approved</span>
+                <span th:if="${combo.approvalStatus.name() == 'REJECTED'}">
+                    <span class="badge bg-danger">&#128308; Rejected</span>
+                    <div class="text-muted small" th:if="${combo.rejectionReason}" th:text="${combo.rejectionReason}">Reason</div>
+                </span>
+            </td>
+            <td class="d-flex flex-wrap gap-1">
+                <a class="btn btn-sm btn-outline-primary" th:href="@{/manager/food-combos/{id}/edit(id=${combo.id})}">Edit</a>
+                <form th:if="${combo.available}" method="post" th:action="@{/manager/food-combos/{id}/deactivate(id=${combo.id})}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate</button>
+                </form>
+                <form th:unless="${combo.available}" method="post" th:action="@{/manager/food-combos/{id}/reactivate(id=${combo.id})}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-success">Reactivate</button>
+                </form>
+            </td>
+        </tr>
+        <tr th:if="${combos.isEmpty()}">
+            <td colspan="7" class="text-center text-muted">No food combos yet. Add one to get started.</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Food Combo Form')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h2 class="mb-4" th:text="${foodCombo.id != null} ? 'Edit Food Combo' : 'New Food Combo'">Food Combo Form</h2>
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}">Error</div>
+
+            <form th:action="${foodCombo.id != null} ? @{/manager/food-combos/{id}/edit(id=${foodCombo.id})} : @{/manager/food-combos/new}"
+                  th:object="${foodCombo}" method="post" id="comboForm">
+                <input type="hidden" th:field="*{id}">
+                <div class="mb-3">
+                    <label class="form-label" for="name">Combo name</label>
+                    <input type="text" th:field="*{name}" class="form-control" placeholder="e.g. Movie Night Combo" required>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="description">Description (optional)</label>
+                    <input type="text" th:field="*{description}" class="form-control" placeholder="e.g. Perfect for two">
+                    <div class="form-text">What's included is listed automatically from the items below.</div>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
+                </div>
+
+                <h6 class="mt-4">Included items</h6>
+                <p class="form-text mt-0">Enter a quantity for each item in the combo (leave 0 for items that aren't included).
+                    Only approved, available menu items are listed.</p>
+                <table class="table table-sm align-middle">
+                    <thead><tr><th>Item</th><th>Menu price</th><th style="width: 120px;">Quantity</th></tr></thead>
+                    <tbody>
+                    <tr th:each="item : ${menuItems}" class="combo-item-row" th:attr="data-price=${item.price}">
+                        <td>
+                            <span th:text="${item.name}">Large Popcorn</span>
+                            <span class="badge bg-warning text-dark" th:unless="${item.orderable}">off the menu</span>
+                        </td>
+                        <td th:text="'Rs. ' + ${item.price}">Rs. 650.00</td>
+                        <td>
+                            <input type="hidden" name="itemId" th:value="${item.id}">
+                            <input type="number" name="itemQty" min="0" max="20" class="form-control form-control-sm combo-qty"
+                                   th:value="${selectedQuantities.containsKey(item.id)} ? ${selectedQuantities.get(item.id)} : 0">
+                        </td>
+                    </tr>
+                    <tr th:if="${menuItems.isEmpty()}">
+                        <td colspan="3" class="text-muted">There are no approved food items yet - add some under Food Menu first.</td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <div class="mb-3">
+                    <label class="form-label" for="bundlePrice">Combo price (Rs.)</label>
+                    <input type="number" step="0.01" min="0.01" th:field="*{bundlePrice}" class="form-control" placeholder="e.g. 1200.00" required>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('bundlePrice')}" th:errors="*{bundlePrice}"></div>
+                </div>
+                <!-- Live comparison: what the same items cost separately vs the combo price. -->
+                <div class="alert alert-secondary py-2" id="comboPriceSummary">
+                    Individual price: <strong>Rs. <span id="individualTotal">0.00</span></strong>
+                    &nbsp;|&nbsp; Combo price: <strong>Rs. <span id="comboPrice">0.00</span></strong>
+                    <span id="comboSaving" class="ms-2"></span>
+                </div>
+
+                <!-- Colour of this combo's card on the homepage (Auto = orange). -->
+                <th:block th:replace="~{fragments/card-theme :: picker(${foodCombo.cardTheme}, 'ch-offer-theme-orange', 'ch-offer-theme-orange', 'Food combo', 'Rs. 0.00', 'Your combo')}"></th:block>
+
+                <p class="form-text">Saving sends the combo for System Admin approval (unless you are the System Admin).
+                    The combo price must be lower than the individual price.</p>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a class="btn btn-outline-secondary" th:href="@{/manager/food-combos}">Cancel</a>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script>
+    (function () {
+        const form = document.getElementById('comboForm');
+        const priceInput = document.getElementById('bundlePrice');
+        function update() {
+            let individual = 0;
+            form.querySelectorAll('.combo-item-row').forEach(function (row) {
+                const qty = parseInt(row.querySelector('.combo-qty').value, 10) || 0;
+                individual += Math.max(0, qty) * parseFloat(row.dataset.price);
+            });
+            const combo = parseFloat(priceInput.value) || 0;
+            document.getElementById('individualTotal').textContent = individual.toFixed(2);
+            document.getElementById('comboPrice').textContent = combo.toFixed(2);
+            const saving = document.getElementById('comboSaving');
+            if (individual > 0 && combo > 0 && combo < individual) {
+                saving.className = 'ms-2 text-success';
+                saving.textContent = 'Customer saves Rs. ' + (individual - combo).toFixed(2);
+            } else if (individual > 0 && combo >= individual) {
+                saving.className = 'ms-2 text-danger';
+                saving.textContent = 'The combo price must be lower than the individual price';
+            } else {
+                saving.textContent = '';
+            }
+            // homepage card preview (card colour picker)
+            const big = document.getElementById('cardThemePreviewBig');
+            const title = document.getElementById('cardThemePreviewTitle');
+            const name = document.getElementById('name');
+            if (big) big.textContent = 'Rs. ' + combo.toFixed(2);
+            if (title) title.textContent = (name && name.value.trim()) || 'Your combo';
+        }
+        form.addEventListener('input', update);
+        update();
+    })();
+</script>
+</body>
+</html>
