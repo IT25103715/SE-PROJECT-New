@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Food Menu')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Food Menu</h2>
+        <a class="btn btn-primary" th:href="@{/manager/food/new}">+ New Food Item</a>
+    </div>
+    <p class="text-muted small">Customers can add these at checkout. New or edited items need System Admin approval before customers see them. Deactivating hides an item without deleting it.</p>
+
+    <table class="table table-striped bg-white align-middle">
+        <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Available</th><th>Approval</th><th>Actions</th></tr></thead>
+        <tbody>
+        <tr th:each="item : ${foodItems}">
+            <td th:text="${item.name}">Large Popcorn</td>
+            <td th:text="${item.category.displayLabel}">Snack</td>
+            <td th:text="'Rs. ' + ${item.price}">Rs. 650.00</td>
+            <td>
+                <span class="badge bg-success" th:if="${item.available}">Available</span>
+                <span class="badge bg-secondary" th:unless="${item.available}">Deactivated</span>
+            </td>
+            <td>
+                <span class="badge bg-warning text-dark" th:if="${item.approvalStatus.name() == 'PENDING'}">&#128993; Pending Approval</span>
+                <span class="badge bg-success" th:if="${item.approvalStatus.name() == 'APPROVED'}">&#128994; Approved</span>
+                <span th:if="${item.approvalStatus.name() == 'REJECTED'}">
+                    <span class="badge bg-danger">&#128308; Rejected</span>
+                    <div class="text-muted small" th:if="${item.rejectionReason}" th:text="${item.rejectionReason}">Reason</div>
+                </span>
+            </td>
+            <td class="d-flex flex-wrap gap-1">
+                <a class="btn btn-sm btn-outline-primary" th:href="@{/manager/food/{id}/edit(id=${item.id})}">Edit</a>
+                <form th:if="${item.available}" method="post" th:action="@{/manager/food/{id}/deactivate(id=${item.id})}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate</button>
+                </form>
+                <form th:unless="${item.available}" method="post" th:action="@{/manager/food/{id}/reactivate(id=${item.id})}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-success">Reactivate</button>
+                </form>
+            </td>
+        </tr>
+        <tr th:if="${foodItems.isEmpty()}">
+            <td colspan="6" class="text-center text-muted">No food items yet. Add one to get started.</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
