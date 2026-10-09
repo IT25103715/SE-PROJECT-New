@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PromotionRepository extends JpaRepository<Promotion, Long> {
-
     Optional<Promotion> findByCodeIgnoreCase(String code);
 
     boolean existsByCodeIgnoreCase(String code);
