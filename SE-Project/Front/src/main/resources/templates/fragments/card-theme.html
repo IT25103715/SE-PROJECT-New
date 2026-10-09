@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  "Homepage card colour" picker, shared by the promotion form and the food combo form.
+    selected     - the entity's current CardTheme (null = Auto)
+    autoSwatch   - CSS class drawn for the Auto option
+    autoPreview  - theme class the preview shows while Auto is selected
+    kicker/big/title - placeholder text for the preview card (the forms update it live)
+  Posts as "cardTheme": "" = Auto (binds to null), otherwise the CardTheme name, e.g. "GREEN".
+  Needs ${cardThemes} (CardTheme.values()) in the model.
+-->
+<th:block th:fragment="picker(selected, autoSwatch, autoPreview, kicker, big, title)">
+    <link rel="stylesheet" th:href="@{/css/offers.css}">
+    <div class="mb-3 ch-theme-picker" th:attr="data-auto-preview=${autoPreview}">
+        <span class="form-label d-block" id="cardThemeLabel">Homepage card colour</span>
+        <div class="ch-theme-options" role="radiogroup" aria-labelledby="cardThemeLabel">
+            <label class="ch-theme-option" title="Auto">
+                <input type="radio" name="cardTheme" value="" th:checked="${selected == null}" th:attr="data-theme-class=${autoPreview}">
+                <span class="ch-theme-swatch" th:classappend="${autoSwatch}"></span>
+                <span class="ch-theme-name">Auto</span>
+            </label>
+            <label class="ch-theme-option" th:each="theme : ${cardThemes}" th:title="${theme.displayLabel}">
+                <input type="radio" name="cardTheme" th:value="${theme.name()}" th:checked="${selected == theme}"
+                       th:attr="data-theme-class=${theme.cssClass}">
+                <span class="ch-theme-swatch" th:classappend="${theme.cssClass}"></span>
+                <span class="ch-theme-name" th:text="${theme.displayLabel}">Cinema Red</span>
+            </label>
+        </div>
+        <div class="ch-theme-preview" id="cardThemePreview"
+             th:classappend="${selected != null} ? ${selected.cssClass} : ${autoPreview}">
+            <div class="ch-offer-kicker" id="cardThemePreviewKicker" th:text="${kicker}">Promo code</div>
+            <div class="ch-offer-big" id="cardThemePreviewBig" th:text="${big}">20% OFF</div>
+            <div class="ch-theme-preview-title" id="cardThemePreviewTitle" th:text="${title}">Your offer</div>
+        </div>
+        <div class="form-text">How this offer's card looks in "Offers &amp; Promotions" on the homepage.</div>
+        <script>
+            (function () {
+                const picker = document.currentScript.closest('.ch-theme-picker');
+                const preview = picker.querySelector('#cardThemePreview');
+                const themeClasses = Array.from(picker.querySelectorAll('input[name="cardTheme"]'))
+                    .map(function (input) { return input.dataset.themeClass; });
+                picker.addEventListener('change', function (e) {
+                    if (e.target.name !== 'cardTheme') return;
+                    themeClasses.forEach(function (c) { preview.classList.remove(c); });
+                    preview.classList.add(e.target.dataset.themeClass);
+                });
+            })();
+        </script>
+    </div>
+</th:block>
+</body>
+</html>
