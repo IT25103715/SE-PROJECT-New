@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Promotion Manager Dashboard')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Promotion Manager Dashboard</h2>
+        <div>
+            <a class="btn btn-outline-secondary" th:href="@{/promotion-manager/test}">Try a Coupon</a>
+            <a class="btn btn-primary" th:href="@{/promotion-manager/new}">+ Create New Promotion</a>
+        </div>
+    </div>
+
+    <!-- Performance Tracking (US-35) -->
+    <div class="row mb-4 g-3">
+        <div class="col-sm-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small mb-1">Active Promotions</h6>
+                    <p class="fs-4 fw-bold mb-0" th:text="${activeCount}">0</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small mb-1">Total Redemptions</h6>
+                    <p class="fs-4 fw-bold mb-0" th:text="${totalRedemptions}">0</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small mb-1">Discount Given This Month</h6>
+                    <p class="fs-4 fw-bold mb-0" th:text="'Rs. ' + ${discountThisMonth}">Rs. 0.00</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table class="table table-striped bg-white align-middle">
+        <thead>
+        <tr>
+            <th>Coupon Code</th>
+            <th>Campaign Name</th>
+            <th>Discount</th>
+            <th>Valid From / Valid To</th>
+            <th>Times Used / Usage Limit</th>
+            <th>Status</th>
+            <th>Approval</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="promo : ${promotions}">
+            <td><code th:text="${promo.code}">CODE10</code>
+                <span class="badge ch-member-badge ms-1" th:if="${promo.membersOnly}">Members Only</span></td>
+            <td th:text="${promo.description}">Campaign name</td>
+            <td>
+                <span th:if="${promo.discountType.name() == 'PERCENTAGE'}" th:text="${promo.discountValue} + '%'">20%</span>
+                <span th:if="${promo.discountType.name() == 'FIXED_AMOUNT'}" th:text="'Rs. ' + ${promo.discountValue}">Rs. 500</span>
+                <span th:if="${promo.discountType.name() == 'COMBO'}" class="small" th:text="${promo.comboSummary}">Combo: 2+ seats + Large Popcorn + Parking -> Rs. 500 off</span>
+                <!-- Food-only scope and/or minimum seats on a Percentage / Fixed promotion -->
+                <div class="small text-muted" th:if="${!#strings.isEmpty(promo.conditionsSummary)}" th:text="${promo.conditionsSummary}">on food only, when you book 2+ seats</div>
+            </td>
+            <td>
+                <span th:text="${promo.startDate} + ' to ' + ${promo.endDate}">start to end</span>
+                <span class="badge bg-warning text-dark" th:if="${promo.pastEndDate}">past end date</span>
+            </td>
+            <td>
+                <span th:text="${promo.usageCount}">0</span>
+                <span th:text="' / ' + (${promo.usageLimit} != null ? ${promo.usageLimit} : 'unlimited')"> / unlimited</span>
+            </td>
+            <td>
+                <span class="badge bg-success" th:if="${promo.status.name() == 'ACTIVE'}">Active</span>
+                <span class="badge bg-secondary" th:if="${promo.status.name() == 'EXPIRED'}">Expired</span>
+                <span class="badge bg-danger" th:if="${promo.status.name() == 'DISABLED'}">Disabled</span>
+            </td>
+            <td>
+                <span class="badge bg-warning text-dark" th:if="${promo.approvalStatus.name() == 'PENDING'}">&#128993; Pending Approval</span>
+                <span class="badge bg-success" th:if="${promo.approvalStatus.name() == 'APPROVED'}">&#128994; Approved</span>
+                <span th:if="${promo.approvalStatus.name() == 'REJECTED'}">
+                    <span class="badge bg-danger">&#128308; Rejected</span>
+                    <div class="text-muted small" th:if="${promo.rejectionReason}" th:text="${promo.rejectionReason}">Reason</div>
+                </span>
+            </td>
+            <td class="d-flex flex-wrap gap-1">
+                <a class="btn btn-sm btn-outline-primary" th:href="@{/promotion-manager/{id}/edit(id=${promo.id})}">Edit</a>
+
+                <form th:if="${promo.status.name() == 'ACTIVE'}" method="post"
+                      th:action="@{/promotion-manager/{id}/deactivate(id=${promo.id})}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('Are you sure you want to deactivate this promotion? Customers will no longer be able to apply this code.')">Deactivate</button>
+                </form>
+                <form th:if="${promo.status.name() == 'ACTIVE'}" method="post"
+                      th:action="@{/promotion-manager/{id}/expire(id=${promo.id})}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-warning">Mark Expired</button>
+                </form>
+
+                <form th:if="${promo.status.name() != 'ACTIVE'}" method="post"
+                      th:action="@{/promotion-manager/{id}/reactivate(id=${promo.id})}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-success">Reactivate</button>
+                </form>
+            </td>
+        </tr>
+        <tr th:if="${promotions.isEmpty()}">
+            <td colspan="7" class="text-center text-muted">No promotions yet. Create one to get started.</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

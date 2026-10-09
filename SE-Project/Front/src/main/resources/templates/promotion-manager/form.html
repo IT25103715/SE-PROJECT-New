@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Promotion Form')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2 class="mb-4" th:text="${promotion.id != null} ? 'Edit Promotion' : 'New Promotion'">Promotion Form</h2>
+
+            <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}">Error</div>
+
+            <form th:action="${promotion.id != null} ? @{/promotion-manager/{id}/edit(id=${promotion.id})} : @{/promotion-manager/new}"
+                  th:object="${promotion}" method="post">
+                <input type="hidden" th:field="*{id}">
+
+                <div class="mb-3">
+                    <label class="form-label">Coupon Code</label>
+                    <input type="text" th:field="*{code}" class="form-control" placeholder="e.g. SUMMER25"
+                           th:readonly="${promotion.id != null}">
+                    <div class="form-text" th:if="${promotion.id != null}">The coupon code can't be changed once created, so codes already shared with customers keep working.</div>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('code')}" th:errors="*{code}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Campaign Name</label>
+                    <textarea th:field="*{description}" class="form-control" rows="2" placeholder="e.g. Summer holiday special offer"></textarea>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Discount Type</label>
+                    <select th:field="*{discountType}" class="form-select" id="discountType">
+                        <option th:each="type : ${discountTypes}" th:value="${type}" th:text="${type}"></option>
+                    </select>
+                    <div class="form-text">COMBO = a flat Rs. amount off, only when the booking contains the combination you set below.</div>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('discountType')}" th:errors="*{discountType}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" id="discountValueLabel">Discount Value</label>
+                    <input type="number" step="0.01" th:field="*{discountValue}" class="form-control"
+                           placeholder="e.g. 20 for 20%, or 500 for a flat Rs. 500 off">
+                    <div class="form-text" id="discountValueHelp">For a Percentage coupon, enter a number from 1 to 100. For a Fixed Amount coupon, enter the amount in Rs.</div>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('discountValue')}" th:errors="*{discountValue}"></div>
+                </div>
+
+                <!-- Percentage / Fixed Amount only: what the discount is taken off. Food Only = just the
+                     food subtotal (food items + food combos), ignoring tickets and parking. -->
+                <div class="mb-3" id="scopeField">
+                    <label class="form-label" for="discountScope">Discount applies to</label>
+                    <select th:field="*{discountScope}" class="form-select" id="discountScope">
+                        <option th:each="scope : ${discountScopes}" th:value="${scope}" th:text="${scope.displayLabel}">Whole booking</option>
+                    </select>
+                    <div class="form-text">e.g. "20% off food when you book 2 or more seats" = Percentage, 20, Food only, Minimum seats 2.</div>
+                </div>
+
+                <!-- Works for every discount type: the booking needs at least this many seats or the
+                     code simply doesn't apply (the customer still books at full price). -->
+                <div class="mb-3">
+                    <label class="form-label" for="minSeats">Minimum seats (optional)</label>
+                    <input type="number" min="1" th:field="*{minSeats}" class="form-control" placeholder="e.g. 2 (leave blank for no seat condition)">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('minSeats')}" th:errors="*{minSeats}"></div>
+                </div>
+
+                <!-- COMBO only: the booking must meet ALL of these for the discount to apply
+                     (ComboDiscountStrategy). Hidden for Percentage / Fixed Amount. -->
+                <fieldset class="border rounded p-3 mb-3" id="comboFields">
+                    <legend class="float-none w-auto px-2 fs-6 mb-0">Combo conditions</legend>
+                    <p class="form-text mt-0">A Combo needs at least one condition: the minimum seats above, a food item, or parking.</p>
+                    <div class="mb-3">
+                        <label class="form-label" for="requiredFoodItemId">Required food item</label>
+                        <select class="form-select" id="requiredFoodItemId" name="requiredFoodItemId">
+                            <option value="">No food condition</option>
+                            <option th:each="item : ${comboFoodItems}" th:value="${item.id}"
+                                    th:text="${item.name} + ' (Rs. ' + ${item.price} + ')'"
+                                    th:selected="${promotion.requiredFoodItem != null and promotion.requiredFoodItem.id == item.id}">Large Popcorn</option>
+                            <!-- keeps a currently required item selectable even if it was later deactivated -->
+                            <option th:if="${promotion.requiredFoodItem != null and !promotion.requiredFoodItem.orderable}"
+                                    th:value="${promotion.requiredFoodItem.id}" selected
+                                    th:text="${promotion.requiredFoodItem.name} + ' (not currently on the menu)'">Old item</option>
+                        </select>
+                        <div class="form-text">Only approved, available menu items are listed.</div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" th:field="*{requiresParking}" id="requiresParking">
+                        <label class="form-check-label" for="requiresParking">Requires car parking</label>
+                    </div>
+                </fieldset>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Valid From</label>
+                        <input type="date" th:field="*{startDate}" class="form-control">
+                        <div class="text-danger small" th:if="${#fields.hasErrors('startDate')}" th:errors="*{startDate}"></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Valid To</label>
+                        <input type="date" th:field="*{endDate}" class="form-control">
+                        <div class="text-danger small" th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}"></div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Usage Limit</label>
+                    <input type="number" th:field="*{usageLimit}" class="form-control" placeholder="Leave blank for unlimited">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('usageLimit')}" th:errors="*{usageLimit}"></div>
+                </div>
+
+                <!-- Membership program: only members (customers with enough confirmed bookings) can use it.
+                     Everyone still sees it on the homepage, with a "Members Only" badge. -->
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" th:field="*{membersOnly}" id="membersOnly">
+                    <label class="form-check-label" for="membersOnly">Members Only</label>
+                    <div class="form-text" th:text="'Only customers who are members can use this code (customers become members automatically after ' + ${T(com.cinemahub.service.MembershipService).BOOKINGS_FOR_MEMBERSHIP} + ' confirmed bookings). Non-members still see it on the homepage, marked Members Only.'">Only members can use this code.</div>
+                </div>
+
+                <!-- Colour of this promotion's card on the homepage (Auto = rotates red / blue / navy-gold). -->
+                <th:block th:replace="~{fragments/card-theme :: picker(${promotion.cardTheme}, 'ch-theme-auto-rotate', 'ch-offer-theme-red', 'Promo code', 'OFFER', 'Your campaign')}"></th:block>
+
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a class="btn btn-outline-secondary" th:href="@{/promotion-manager/dashboard}">Cancel</a>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script>
+    // Show the combo conditions only for COMBO, and explain what "Discount Value" means for each type.
+    (function () {
+        const type = document.getElementById('discountType');
+        const combo = document.getElementById('comboFields');
+        const scope = document.getElementById('scopeField');
+        const label = document.getElementById('discountValueLabel');
+        const help = document.getElementById('discountValueHelp');
+        function sync() {
+            const isCombo = type.value === 'COMBO';
+            combo.classList.toggle('d-none', !isCombo);
+            combo.disabled = !isCombo;
+            // A Combo is always a flat amount off the whole booking.
+            scope.classList.toggle('d-none', isCombo);
+            label.textContent = isCombo ? 'Combo discount (Rs. off)' : 'Discount Value';
+            help.textContent = isCombo
+                ? 'Flat amount taken off the booking total (seats + food + parking) when every condition is met.'
+                : 'For a Percentage coupon, enter a number from 1 to 100. For a Fixed Amount coupon, enter the amount in Rs.';
+        }
+        type.addEventListener('change', sync);
+        sync();
+    })();
+
+    // Keep the homepage card preview (card colour picker) in step with what the manager types.
+    (function () {
+        const code = document.getElementById('code');
+        const form = code && code.form;
+        const description = document.getElementById('description');
+        const type = document.getElementById('discountType');
+        const value = document.getElementById('discountValue');
+        const kicker = document.getElementById('cardThemePreviewKicker');
+        const big = document.getElementById('cardThemePreviewBig');
+        const title = document.getElementById('cardThemePreviewTitle');
+        if (!form || !kicker) return;
+        function update() {
+            const c = code && code.value.trim();
+            kicker.textContent = c ? 'Use code ' + c.toUpperCase() : 'Promo code';
+            const v = value && value.value.trim();
+            if (!v) {
+                big.textContent = 'OFFER';
+            } else if (type && type.value === 'PERCENTAGE') {
+                big.textContent = v.replace(/\.0+$/, '') + '% OFF';
+            } else {
+                big.textContent = 'Rs. ' + v.replace(/\.0+$/, '') + ' OFF';
+            }
+            const d = description && description.value.trim();
+            title.textContent = d || 'Your campaign';
+        }
+        form.addEventListener('input', update);
+        form.addEventListener('change', update);
+        update();
+    })();
+</script>
+</body>
+</html>

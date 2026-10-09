@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Try a Coupon')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2 class="mb-3">Try a Coupon</h2>
+            <p class="text-muted">
+                Enter a coupon code and an original amount to see the discount it produces.
+                This is a read-only preview - it validates the code (active, in date range, under its
+                usage limit) and calculates the discount via the matching
+                <code>DiscountStrategy</code>, but does not count as a real redemption.
+            </p>
+
+            <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}">Error</div>
+
+            <form th:action="@{/promotion-manager/test}" th:object="${promotionTestForm}" method="post" class="mb-4">
+                <div class="mb-3">
+                    <label class="form-label">Coupon Code</label>
+                    <input type="text" th:field="*{code}" class="form-control" placeholder="e.g. SUMMER25">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('code')}" th:errors="*{code}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Original Amount (Rs.)</label>
+                    <input type="number" step="0.01" th:field="*{amount}" class="form-control" placeholder="e.g. 1500">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}"></div>
+                </div>
+                <button type="submit" class="btn btn-primary">Calculate</button>
+                <a class="btn btn-outline-secondary" th:href="@{/promotion-manager/dashboard}">Back</a>
+            </form>
+
+            <div class="card" th:if="${result}">
+                <div class="card-body">
+                    <h5 class="card-title">Result</h5>
+                    <table class="table table-sm mb-0">
+                        <tr><th>Coupon</th><td th:text="${result.code}"></td></tr>
+                        <tr><th>Strategy used</th><td th:text="${result.discountType}"></td></tr>
+                        <tr><th>Original Amount</th><td th:text="'Rs. ' + ${result.originalAmount}"></td></tr>
+                        <tr><th>Discount</th><td th:text="'- Rs. ' + ${result.discountAmount}"></td></tr>
+                        <tr><th>Final Amount</th><td><strong th:text="'Rs. ' + ${result.finalAmount}"></strong></td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
