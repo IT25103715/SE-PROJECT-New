@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Showtimes Overview')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Showtimes Overview</h2>
+        <a class="btn btn-outline-secondary" th:href="@{/manager/showtimes}">Manage Showtimes</a>
+    </div>
+    <p class="text-muted">Every showtime in the system, regardless of who submitted it - pending submissions are listed first.</p>
+
+    <table class="table table-striped bg-white align-middle">
+        <thead>
+        <tr>
+            <th>Movie Title</th>
+            <th>Cinema Hall</th>
+            <th>Date &amp; Time</th>
+            <th>Ticket Price</th>
+            <th>Created By</th>
+            <th>Date Submitted</th>
+            <th>Approval Status</th>
+            <th sec:authorize="hasRole('SYSTEM_ADMIN')">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="showtime : ${showtimes}">
+            <td>
+                <div th:replace="~{fragments/poster :: thumbnail(${showtime.movie.title}, ${showtime.movie.posterUrl}, 'showtime-' + ${showtime.id})}"></div>
+            </td>
+            <td th:text="${showtime.cinemaHall.name}">Hall</td>
+            <td th:text="${#temporals.format(showtime.dateTime, 'dd MMM yyyy, HH:mm')}">Date</td>
+            <td th:text="'Rs. ' + ${showtime.price}">Price</td>
+            <td th:text="${showtime.createdBy != null} ? ${showtime.createdBy.name} : '—'">Created by</td>
+            <td th:text="${#temporals.format(showtime.createdAt, 'dd MMM yyyy, HH:mm')}">Date</td>
+            <td>
+                <span class="badge bg-warning text-dark" th:if="${showtime.approvalStatus.name() == 'PENDING'}">&#128993; Pending</span>
+                <span class="badge bg-success" th:if="${showtime.approvalStatus.name() == 'APPROVED'}">&#128994; Approved</span>
+                <span th:if="${showtime.approvalStatus.name() == 'REJECTED'}">
+                    <span class="badge bg-danger">&#128308; Rejected</span>
+                    <div class="text-muted small" th:if="${showtime.rejectionReason}" th:text="${showtime.rejectionReason}">Reason</div>
+                </span>
+            </td>
+            <td sec:authorize="hasRole('SYSTEM_ADMIN')">
+                <div class="d-flex flex-wrap gap-1 align-items-center" th:if="${showtime.approvalStatus.name() == 'PENDING'}">
+                    <form method="post" th:action="@{/manager/showtimes-overview/{id}/approve(id=${showtime.id})}" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-success">Approve</button>
+                    </form>
+                    <form method="post" th:action="@{/manager/showtimes-overview/{id}/reject(id=${showtime.id})}"
+                          class="d-inline-flex gap-1 align-items-center">
+                        <input type="text" name="reason" class="form-control form-control-sm" style="width: 140px;"
+                               placeholder="Reason (optional)">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        <tr th:if="${showtimes.isEmpty()}">
+            <td colspan="8" class="text-center text-muted">No showtimes in the system yet.</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

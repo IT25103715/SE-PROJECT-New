@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Manage Showtimes')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}">Error</div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Manage Showtimes</h2>
+        <a class="btn btn-primary" th:href="@{/manager/showtimes/new}">+ New Showtime</a>
+    </div>
+
+    <table class="table table-striped bg-white">
+        <thead><tr><th>Movie</th><th>Hall</th><th>Date &amp; Time</th><th>Price</th><th>Approval</th><th>Actions</th></tr></thead>
+        <tbody>
+        <tr th:each="showtime : ${showtimes}">
+            <td th:text="${showtime.movie.title}">Movie</td>
+            <td th:text="${showtime.cinemaHall.name}">Hall</td>
+            <td th:text="${#temporals.format(showtime.dateTime, 'dd MMM yyyy, HH:mm')}">Date</td>
+            <td th:text="'Rs. ' + ${showtime.price}">Price</td>
+            <td>
+                <span class="badge bg-warning text-dark" th:if="${showtime.approvalStatus.name() == 'PENDING'}">&#128993; Pending Approval</span>
+                <span class="badge bg-success" th:if="${showtime.approvalStatus.name() == 'APPROVED'}">&#128994; Approved</span>
+                <span th:if="${showtime.approvalStatus.name() == 'REJECTED'}">
+                    <span class="badge bg-danger">&#128308; Rejected</span>
+                    <div class="text-muted small" th:if="${showtime.rejectionReason}" th:text="${showtime.rejectionReason}">Reason</div>
+                </span>
+            </td>
+            <td class="d-flex gap-1">
+                <a class="btn btn-sm btn-outline-primary" th:href="@{/manager/showtimes/{id}/edit(id=${showtime.id})}">Edit</a>
+                <a class="btn btn-sm btn-outline-danger" th:href="@{/manager/showtimes/{id}/delete(id=${showtime.id})}">Delete</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

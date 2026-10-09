@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Manage Halls')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}">Error</div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Manage Cinema Halls</h2>
+        <a class="btn btn-primary" th:href="@{/manager/halls/new}">+ New Hall</a>
+    </div>
+
+    <table class="table table-striped bg-white">
+        <thead><tr><th>Name</th><th>Rows</th><th>Seats/Row</th><th>Total Seats</th><th>Approval</th><th>Actions</th></tr></thead>
+        <tbody>
+        <tr th:each="hall : ${halls}">
+            <td th:text="${hall.name}">Name</td>
+            <td th:text="${hall.totalRows}">Rows</td>
+            <td th:text="${hall.seatsPerRow}">Seats</td>
+            <td th:text="${hall.totalRows * hall.seatsPerRow}">Total</td>
+            <td>
+                <span class="badge bg-warning text-dark" th:if="${hall.approvalStatus.name() == 'PENDING'}">&#128993; Pending Approval</span>
+                <span class="badge bg-success" th:if="${hall.approvalStatus.name() == 'APPROVED'}">&#128994; Approved</span>
+                <span th:if="${hall.approvalStatus.name() == 'REJECTED'}">
+                    <span class="badge bg-danger">&#128308; Rejected</span>
+                    <div class="text-muted small" th:if="${hall.rejectionReason}" th:text="${hall.rejectionReason}">Reason</div>
+                </span>
+            </td>
+            <td class="d-flex gap-1">
+                <a class="btn btn-sm btn-outline-primary" th:href="@{/manager/halls/{id}/edit(id=${hall.id})}">Edit</a>
+                <form th:action="@{/manager/halls/{id}/delete(id=${hall.id})}" method="post">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

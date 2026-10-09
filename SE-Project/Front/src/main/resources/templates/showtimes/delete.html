@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Delete Showtime')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2 class="mb-4">Delete Showtime</h2>
+            <p>Delete the showtime for <strong th:text="${showtime.movie.title}">Movie</strong> on
+                <span th:text="${#temporals.format(showtime.dateTime, 'dd MMM yyyy, HH:mm')}">date</span>?</p>
+            <form th:action="@{/manager/showtimes/{id}/delete(id=${showtime.id})}" method="post">
+                <button type="submit" class="btn btn-danger">Yes, delete</button>
+                <a class="btn btn-outline-secondary" th:href="@{/manager/showtimes}">Cancel</a>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

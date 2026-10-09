@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Hall Form')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2 class="mb-4" th:text="${hall.id != null} ? 'Edit Hall' : 'New Cinema Hall'">Hall Form</h2>
+            <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+            <form th:action="${hall.id != null} ? @{/manager/halls/{id}/edit(id=${hall.id})} : @{/manager/halls/new}"
+                  th:object="${hall}" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Hall Name</label>
+                    <input type="text" th:field="*{name}" class="form-control">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Total Rows</label>
+                    <input type="number" th:field="*{totalRows}" class="form-control" th:disabled="${hall.id != null}">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('totalRows')}" th:errors="*{totalRows}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Seats per Row</label>
+                    <input type="number" th:field="*{seatsPerRow}" class="form-control" th:disabled="${hall.id != null}">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('seatsPerRow')}" th:errors="*{seatsPerRow}"></div>
+                </div>
+                <p class="text-muted small" th:if="${hall.id != null}">
+                    Rows/seats-per-row are locked after creation - the seat grid is generated once and showtimes/bookings refer to those exact seats.
+                </p>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a class="btn btn-outline-secondary" th:href="@{/manager/halls}">Cancel</a>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
